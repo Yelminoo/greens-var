@@ -14,7 +14,7 @@ const SUBDOMAIN_MAP: Record<string, string> = {
 //
 // To re-enable subdomain routing: set SUBDOMAIN_ROUTING=true in .env
 // ─────────────────────────────────────────────────────────────────────────────
-const SUBDOMAIN_ROUTING = import.meta.env.SUBDOMAIN_ROUTING === 'true'
+const SUBDOMAIN_ROUTING = process.env.SUBDOMAIN_ROUTING === 'true'
 
 const SKIP_REWRITE = ['/api', '/admin', '/_astro', '/images', '/favicon', '/services', '/contact', '/about']
 
@@ -63,12 +63,13 @@ export const subdomainMiddleware: MiddlewareHandler = async (context, next) => {
   locals.isAdmin = true  // AUTH DISABLED
 
   // Subdomain rewrite: only active when SUBDOMAIN_ROUTING=true
-  // e.g. fruithai.greensvar.com/ → rewrites internally to /fruithai/
+  // e.g. fruithai.greensvar.com/products → rewrites internally to /fruithai/products
   if (SUBDOMAIN_ROUTING && brand !== 'main' && !isNgrok) {
     const shouldSkip = SKIP_REWRITE.some(p => url.pathname.startsWith(p))
                     || url.pathname.startsWith(`/${brand}`)
-    if (!shouldSkip && url.pathname === '/') {
-      return context.rewrite(`/${brand}/`)
+    if (!shouldSkip) {
+      const newPath = `/${brand}${url.pathname === '/' ? '/' : url.pathname}${url.search}`
+      return context.rewrite(newPath)
     }
   }
 
