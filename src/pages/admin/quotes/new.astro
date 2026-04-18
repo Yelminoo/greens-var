@@ -1,0 +1,142 @@
+---
+import { db } from '../../../db/db'
+import { products } from '../../../db/schema'
+
+const allProducts = await db.select().from(products)
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>New Quote — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f4f0; color: #1C2B1E; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #1C2B1E; padding: 28px 20px; }
+    .sidebar .logo { font-size: 18px; font-weight: 700; color: #A8D635; margin-bottom: 24px; }
+    .sidebar a { display: block; color: rgba(255,255,255,0.6); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 4px; }
+    .sidebar a:hover { background: rgba(255,255,255,0.08); color: white; }
+    .sidebar a.active { background: rgba(255,255,255,0.12); color: white; }
+    .main { margin-left: 220px; padding: 40px; }
+    .back { display: inline-block; color: #2D7D46; text-decoration: none; font-size: 13px; margin-bottom: 16px; }
+    .back:hover { text-decoration: underline; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #333; }
+    input, textarea, select { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: inherit; }
+    input:focus, textarea:focus, select:focus { border-color: #2D7D46; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .full { grid-column: 1 / -1; }
+    .btn { background: #2D7D46; color: white; border: none; border-radius: 8px; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #5CB85C; }
+    .btn-secondary { background: #888; }
+    .btn-secondary:hover { background: #666; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">GV Admin</div>
+    <a href="/admin">📋 Quotes</a>
+    <a href="/admin/quotes/new" class="active">✏️ New Quote</a>
+    <a href="/admin/products">🌿 Products</a>
+    <a href="/admin/products/new">＋ Add Product</a>
+  </nav>
+
+  <main class="main">
+    <a href="/admin" class="back">← Back to Quotes</a>
+    <h1>✏️ Create New Quote</h1>
+    <p style="color:#888;font-size:13px;margin-bottom:28px">Fill in customer details and add products to generate a quote</p>
+
+    <div class="card">
+      <h3 style="margin-bottom:16px">Customer Information</h3>
+      <form id="quoteForm">
+        <div class="grid">
+          <div>
+            <label for="buyerName">Buyer Name *</label>
+            <input type="text" id="buyerName" name="buyerName" required />
+          </div>
+          <div>
+            <label for="company">Company *</label>
+            <input type="text" id="company" name="company" required />
+          </div>
+          <div>
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div>
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" />
+          </div>
+          <div>
+            <label for="region">Region/Country *</label>
+            <input type="text" id="region" name="region" required />
+          </div>
+          <div>
+            <label for="brand">Brand *</label>
+            <select id="brand" name="brand" required>
+              <option value="fruithai">🍊 FruThai — Tropical Fruits</option>
+              <option value="variegata">🥬 Variegata — Vegetables</option>
+            </select>
+          </div>
+          <div>
+            <label for="deliveryDate">Delivery Date</label>
+            <input type="date" id="deliveryDate" name="deliveryDate" />
+          </div>
+          <div class="full">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="3"></textarea>
+          </div>
+        </div>
+        
+        <h3 style="margin:24px 0 16px">Products</h3>
+        <p style="color:#888;font-size:12px;margin-bottom:16px">Add products to this quote (you can add items after creating the quote)</p>
+        
+        <div style="margin-top:20px;display:flex;gap:10px">
+          <button type="submit" class="btn">Create Quote</button>
+          <a href="/admin" class="btn btn-secondary" style="display:inline-block;text-decoration:none;text-align:center">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const form = e.target as HTMLFormElement
+      const formData = new FormData(form)
+      
+      const payload = {
+        buyerName: formData.get('buyerName'),
+        company: formData.get('company'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        region: formData.get('region'),
+        deliveryDate: formData.get('deliveryDate') || null,
+        notes: formData.get('notes') || '',
+        brand:  formData.get('brand') || 'fruithai',
+        status: 'in-review'
+      }
+
+      try {
+        const res = await fetch('/api/admin/quotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          window.location.href = `/admin/quotes/${data.id}`
+        } else {
+          alert('Failed to create quote')
+        }
+      } catch (err) {
+        console.error(err)
+        alert('Error creating quote')
+      }
+    })
+  </script>
+</body>
+</html>

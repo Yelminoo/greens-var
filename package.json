@@ -1,0 +1,42 @@
+{
+  "name": "greensvar",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed.ts",
+    "start": "node dist/server/entry.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.0.4",
+    "@tailwindcss/vite": "^4.2.2",
+    "astro": "^6.1.5",
+    "bcryptjs": "^3.0.3",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "express-session": "^1.19.0",
+    "nodemailer": "^8.0.5",
+    "pdfkit": "^0.18.0",
+    "pg": "^8.20.0",
+    "resend": "^6.10.0",
+    "tailwindcss": "^4.2.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express-session": "^1.18.2",
+    "@types/nodemailer": "^8.0.0",
+    "@types/pdfkit": "^0.17.5",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.1",
+    "tsx": "^4.21.0"
+  }
+}

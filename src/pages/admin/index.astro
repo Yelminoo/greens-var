@@ -1,0 +1,106 @@
+---
+import { db } from '../../db/db'
+import { quoteRequests } from '../../db/schema'
+import { desc } from 'drizzle-orm'
+
+const quotes = await db.select().from(quoteRequests).orderBy(desc(quoteRequests.createdAt))
+
+const statusColor: Record<string, string> = {
+  pending:   '#F4821F',
+  'in-review': '#A8D635',
+  sent:      '#2D7D46',
+  accepted:  '#1A9E8F',
+  rejected:  '#e74c3c',
+}
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Quotes — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f4f0; color: #1C2B1E; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #1C2B1E; padding: 28px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .sidebar .logo { font-size: 18px; font-weight: 700; color: #A8D635; margin-bottom: 24px; }
+    .sidebar a { color: rgba(255,255,255,0.6); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; transition: all .2s; }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.08); color: white; }
+    .sidebar a.logout { margin-top: auto; color: rgba(255,255,255,0.3); font-size: 13px; }
+    .main { margin-left: 220px; padding: 40px; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; background: #2D7D46; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; transition: background .2s; }
+    .btn:hover { background: #5CB85C; }
+    table { width: 100%; background: white; border-radius: 12px; overflow: hidden; border-collapse: collapse; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    th { background: #f9fdf9; padding: 12px 16px; text-align: left; font-size: 11px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; color: #888; }
+    td { padding: 14px 16px; border-top: 1px solid #f0f0f0; font-size: 14px; }
+    tr:hover td { background: #fafff8; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; }
+    .link { color: #2D7D46; text-decoration: none; font-weight: 600; }
+    .link:hover { text-decoration: underline; }
+    .empty { text-align: center; padding: 60px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">GV Admin</div>
+    <a href="/admin" class="active">📋 Quotes</a>
+    <a href="/admin/quotes/new">✏️ New Quote</a>
+    <a href="/admin/products">🌿 Products</a>
+    <a href="/admin/products/new">＋ Add Product</a>
+    <form method="POST" action="/api/admin/login?_method=DELETE" style="margin-top:auto">
+      <button style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:13px;padding:10px 12px;width:100%;text-align:left">⬅ Logout</button>
+    </form>
+  </nav>
+
+  <main class="main">
+    <div class="toolbar">
+      <h1>Quote Requests</h1>
+      <a href="/admin/quotes/new" class="btn">+ New Quote</a>
+    </div>
+
+    {quotes.length === 0
+      ? <div class="empty">No quote requests yet.</div>
+      : (
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Buyer</th>
+              <th>Brand</th>
+              <th>Region</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {quotes.map(q => (
+              <tr>
+                <td><span style="font-family:DM Mono,monospace;font-size:12px">{q.ref}</span></td>
+                <td>
+                  <div style="font-weight:600">{q.buyerName}</div>
+                  {q.company && <div style="font-size:12px;color:#888">{q.company}</div>}
+                </td>
+                <td style="text-transform:capitalize">{q.brand}</td>
+                <td>{q.region ?? '—'}</td>
+                <td>
+                  <span class="badge" style={`background:${statusColor[q.status ?? 'pending']}22;color:${statusColor[q.status ?? 'pending']}`}>
+                    {q.status}
+                  </span>
+                </td>
+                <td style="font-size:12px;color:#888">
+                  {q.createdAt ? new Date(q.createdAt).toLocaleDateString('en-GB') : '—'}
+                </td>
+                <td><a href={`/admin/quotes/${q.id}`} class="link">View →</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+  </main>
+</body>
+</html>

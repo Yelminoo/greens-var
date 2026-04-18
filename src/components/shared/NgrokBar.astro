@@ -1,0 +1,50 @@
+---
+// Shown only when accessed via ngrok (isNgrok = true)
+// Lets the client switch between all four sections from one URL
+interface Props {
+  currentBrand: string
+}
+const { currentBrand } = Astro.props
+---
+
+<div id="ngrok-bar" style="
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #1C2B1E;
+  border-top: 2px solid #A8D635;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  flex-wrap: wrap;
+">
+  <span style="color:#A8D635;font-weight:700;letter-spacing:1px;margin-right:4px;">
+    CLIENT PREVIEW
+  </span>
+  <span style="color:rgba(255,255,255,0.3);margin-right:4px;">Navigate to:</span>
+
+  <a id="link-main"      href="/"             style={`text-decoration:none;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid;transition:all .15s;${currentBrand==='main'      ? 'background:#2D7D46;color:white;border-color:#2D7D46' : 'color:#5CB85C;border-color:#2D7D46'}`}>
+    🌿 Main Site
+  </a>
+  <a id="link-fruithai"  href="/fruithai/?_brand=fruithai"   style={`text-decoration:none;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid;transition:all .15s;${currentBrand==='fruithai'  ? 'background:#F4821F;color:white;border-color:#F4821F' : 'color:#F4821F;border-color:#F4821F'}`}>
+    🍊 FruThai
+  </a>
+  <a id="link-variegata" href="/variegata/?_brand=variegata" style={`text-decoration:none;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid;transition:all .15s;${currentBrand==='variegata' ? 'background:#1A9E8F;color:white;border-color:#1A9E8F' : 'color:#1A9E8F;border-color:#1A9E8F'}`}>
+    🥬 Variegata
+  </a>
+  <a id="link-admin"     href="/admin"        style="text-decoration:none;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid;color:#A8D635;border-color:#A8D635;">
+    ⚙️ Admin
+  </a>
+
+  <span style="margin-left:auto;color:rgba(255,255,255,0.2);font-size:11px;">
+    via ngrok
+  </span>
+</div>
+
+<!-- Push page content up so bar doesn't overlap footer -->
+<style>
+  body { padding-bottom: 52px !important; }
+</style>

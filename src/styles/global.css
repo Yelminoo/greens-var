@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand colours */
+  --color-green-primary:   #2D7D46;
+  --color-green-fresh:     #5CB85C;
+  --color-lime-accent:     #A8D635;
+  --color-cream:           #FFFDF0;
+  --color-orange-fruit:    #F4821F;
+  --color-teal-veg:        #1A9E8F;
+  --color-dark:            #1C2B1E;
+
+  /* Typography */
+  --font-heading: 'Lora', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'DM Mono', monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+    color: var(--color-dark);
+    background-color: var(--color-cream);
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  ::selection {
+    background-color: var(--color-lime-accent);
+    color: var(--color-dark);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white transition-all duration-200;
+    background-color: var(--color-green-primary);
+  }
+  .btn-primary:hover {
+    background-color: var(--color-green-fresh);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(45, 125, 70, 0.3);
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-200 border-2;
+    border-color: var(--color-green-primary);
+    color: var(--color-green-primary);
+  }
+  .btn-outline:hover {
+    background-color: var(--color-green-primary);
+    color: white;
+  }
+
+  .card {
+    @apply rounded-2xl overflow-hidden bg-white shadow-sm transition-all duration-200;
+  }
+  .card:hover {
+    box-shadow: 0 8px 32px rgba(45, 125, 70, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .section-title {
+    font-family: var(--font-heading);
+    @apply text-3xl md:text-4xl font-bold;
+    color: var(--color-dark);
+  }
+
+  .tag {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold font-mono;
+    background-color: var(--color-lime-accent);
+    color: var(--color-dark);
+  }
+}

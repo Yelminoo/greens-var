@@ -1,0 +1,123 @@
+---
+import BrandLayout from '../../layouts/BrandLayout.astro'
+import { getProductBySlug } from '../../db/products'
+
+const { slug } = Astro.params
+const brand = Astro.locals.brand as 'fruithai' | 'variegata'
+
+const product = await getProductBySlug(slug!)
+
+if (!product) {
+  return Astro.redirect('/')
+}
+
+const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--color-orange-fruit)'
+const fallback    = brand === 'variegata' ? '/images/variegata/placeholder.svg' : '/images/fruithai/placeholder.svg'
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+---
+
+<BrandLayout title={product.name} brand={brand}>
+  <div class="max-w-6xl mx-auto px-6 py-16">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm opacity-50 mb-8 font-mono">
+      <a href="/" class="hover:opacity-100">Home</a>
+      <span class="mx-2">/</span>
+      <a href="/products" class="hover:opacity-100">Products</a>
+      <span class="mx-2">/</span>
+      <span>{product.name}</span>
+    </nav>
+
+    <div class="grid md:grid-cols-2 gap-12 items-start">
+      <!-- Image -->
+      <div class="rounded-3xl overflow-hidden bg-gray-100 aspect-square">
+        <img
+          src={product.image || fallback}
+          alt={product.name}
+          class="w-full h-full object-cover"
+          onerror={`this.src='${fallback}'`}
+        />
+      </div>
+
+      <!-- Details -->
+      <div class="sticky top-28">
+        <div class="flex flex-wrap gap-2 mb-4">
+          {product.tags.map(tag => (
+            <span class="tag" style={`background-color: ${accentColor}; color: white;`}>{tag}</span>
+          ))}
+        </div>
+
+        <h1 class="text-4xl font-bold mb-1" style="font-family: var(--font-heading)">{product.name}</h1>
+        <p class="font-mono text-sm opacity-50 mb-6">{product.variety}</p>
+
+        <p class="text-sm opacity-60 leading-relaxed mb-8">{product.description}</p>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="bg-gray-50 rounded-xl p-4">
+            <p class="text-xs font-mono opacity-50 uppercase mb-1">Origin</p>
+            <p class="font-semibold text-sm">{product.origin}</p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4">
+            <p class="text-xs font-mono opacity-50 uppercase mb-1">Pack Unit</p>
+            <p class="font-semibold text-sm">{product.unit}</p>
+          </div>
+        </div>
+
+        <!-- Seasonal availability -->
+        <div class="mb-8">
+          <p class="text-xs font-mono opacity-50 uppercase mb-3">Seasonal Availability</p>
+          <div class="flex gap-1.5 flex-wrap">
+            {MONTHS.map((m, i) => {
+              const inSeason = product.seasons.includes(i + 1)
+              return (
+                <span
+                  class="px-2.5 py-1 rounded-full text-xs font-mono font-semibold"
+                  style={inSeason
+                    ? `background-color: ${accentColor}; color: white;`
+                    : 'background-color: #f0f0f0; color: #aaa;'
+                  }
+                >
+                  {m}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+
+        <button
+          id="add-to-quote"
+          class="w-full py-4 rounded-2xl font-semibold text-white text-lg transition-transform hover:scale-[1.02] mb-3"
+          style={`background-color: ${accentColor}`}
+          data-slug={product.slug}
+          data-name={product.name}
+          data-unit={product.unit}
+          data-brand={brand}
+        >
+          + Add to Quote
+        </button>
+        <a href="/quote"
+           class="block w-full text-center py-4 rounded-2xl font-semibold border-2 transition-colors"
+           style={`border-color: ${accentColor}; color: ${accentColor}`}>
+          View Quote Basket
+        </a>
+      </div>
+    </div>
+  </div>
+</BrandLayout>
+
+<script>
+  import { addToBasket } from '../../lib/quoteBasket'
+
+  const btn = document.getElementById('add-to-quote') as HTMLButtonElement
+  btn?.addEventListener('click', () => {
+    addToBasket({
+      slug:     btn.dataset.slug!,
+      name:     btn.dataset.name!,
+      unit:     btn.dataset.unit!,
+      quantity: 1,
+      brand:    btn.dataset.brand!,
+    })
+    btn.textContent = '✓ Added to Quote'
+    setTimeout(() => { btn.textContent = '+ Add to Quote' }, 1800)
+  })
+</script>

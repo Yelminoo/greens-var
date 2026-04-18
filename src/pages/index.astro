@@ -1,0 +1,111 @@
+---
+import MainLayout from '../layouts/MainLayout.astro'
+const IS_DEV = import.meta.env.DEV
+---
+
+<MainLayout title="Home">
+
+  {IS_DEV && (
+    <div style="background:#1C2B1E;border-bottom:2px solid #A8D635;padding:12px 24px;display:flex;align-items:center;gap:16px;font-family:monospace;font-size:13px;">
+      <span style="color:#A8D635;font-weight:700;">DEV</span>
+      <span style="color:rgba(255,255,255,0.4)">Open brand sites via subdomain:</span>
+      <a href="http://fruithai.localhost:4321"   style="color:#F4821F;text-decoration:none;font-weight:600;" target="_blank">fruithai.localhost:4321 →</a>
+      <a href="http://variegata.localhost:4321"  style="color:#1A9E8F;text-decoration:none;font-weight:600;" target="_blank">variegata.localhost:4321 →</a>
+      <a href="/admin"                           style="color:#A8D635;text-decoration:none;font-weight:600;margin-left:auto;" target="_blank">Admin →</a>
+    </div>
+  )}
+
+  <!-- Hero -->
+  <section class="relative min-h-[90vh] flex items-center overflow-hidden" style="background-color: var(--color-dark);">
+    <div class="absolute inset-0 opacity-30"></div>
+    <div class="absolute -right-32 -top-32 w-[600px] h-[600px] rounded-full opacity-20"
+         style="background: radial-gradient(circle, var(--color-lime-accent), var(--color-green-primary))"></div>
+
+    <div class="relative max-w-7xl mx-auto px-6 py-24">
+      <span class="tag mb-6 inline-block">Premium Tropical Produce</span>
+      <h1 class="text-5xl md:text-7xl font-bold text-white leading-tight max-w-3xl mb-6" style="font-family: var(--font-heading)">
+        From Thailand's Finest Farms to Your Market
+      </h1>
+      <p class="text-lg text-white/60 max-w-xl mb-10">
+        Greens Variegated connects world-class tropical fruit and vegetable growers in Thailand with importers, distributors, and food businesses across the globe.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="/about" class="btn-primary">Learn About Us</a>
+        <a href="/services" class="btn-outline" style="border-color: white; color: white;">Our Services</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brand Gateway -->
+  <section class="py-24 px-6">
+    <div class="max-w-7xl mx-auto">
+      <p class="text-center text-sm font-mono font-semibold uppercase tracking-widest opacity-50 mb-4">Our Brands</p>
+      <h2 class="section-title text-center mb-16">Explore Our Product Lines</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+
+        <!-- FruThai -->
+        <a href="http://fruithai.greensvar.com"
+           class="group relative rounded-3xl overflow-hidden min-h-[420px] flex flex-col justify-end p-10"
+           style="background-color: #1a0f00;">
+          <div class="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+          <div class="absolute top-6 right-6 w-24 h-24 rounded-full opacity-30 group-hover:scale-150 transition-transform duration-700"
+               style="background-color: var(--color-orange-fruit)"></div>
+          <div class="relative">
+            <span class="tag mb-3 inline-block" style="background-color: var(--color-orange-fruit); color: white;">Fruits</span>
+            <h3 class="text-4xl font-bold text-white mb-2" style="font-family: var(--font-heading)">FruThai</h3>
+            <p class="text-white/60 mb-6">Mango, Durian, Longan, Mangosteen & more tropical fruits from Thailand.</p>
+            <span class="inline-flex items-center gap-2 text-white font-semibold group-hover:gap-4 transition-all">
+              Explore FruThai →
+            </span>
+          </div>
+        </a>
+
+        <!-- Variegata -->
+        <a href="http://variegata.greensvar.com"
+           class="group relative rounded-3xl overflow-hidden min-h-[420px] flex flex-col justify-end p-10"
+           style="background-color: #001a14;">
+          <div class="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+          <div class="absolute top-6 right-6 w-24 h-24 rounded-full opacity-30 group-hover:scale-150 transition-transform duration-700"
+               style="background-color: var(--color-teal-veg)"></div>
+          <div class="relative">
+            <span class="tag mb-3 inline-block" style="background-color: var(--color-teal-veg); color: white;">Vegetables & Herbs</span>
+            <h3 class="text-4xl font-bold text-white mb-2" style="font-family: var(--font-heading)">Variegata</h3>
+            <p class="text-white/60 mb-6">Lemongrass, Galangal, Kaffir Lime, Thai Chili & authentic Thai herbs.</p>
+            <span class="inline-flex items-center gap-2 text-white font-semibold group-hover:gap-4 transition-all">
+              Explore Variegata →
+            </span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services snapshot -->
+  <section class="py-24 px-6" style="background-color: var(--color-green-primary);">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="section-title text-white text-center mb-16">How We Work With You</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white/10 rounded-2xl p-8 text-white">
+          <div class="text-4xl mb-4">🌱</div>
+          <h3 class="text-xl font-bold mb-2" style="font-family: var(--font-heading)">Sourcing</h3>
+          <p class="opacity-70 text-sm leading-relaxed">Direct relationships with certified growers across Thailand's premier agricultural regions.</p>
+        </div>
+        <div class="bg-white/10 rounded-2xl p-8 text-white">
+          <div class="text-4xl mb-4">📦</div>
+          <h3 class="text-xl font-bold mb-2" style="font-family: var(--font-heading)">Packing & QC</h3>
+          <p class="opacity-70 text-sm leading-relaxed">Export-grade packing with cold-chain management and third-party quality inspections.</p>
+        </div>
+        <div class="bg-white/10 rounded-2xl p-8 text-white">
+          <div class="text-4xl mb-4">✈️</div>
+          <h3 class="text-xl font-bold mb-2" style="font-family: var(--font-heading)">Global Logistics</h3>
+          <p class="opacity-70 text-sm leading-relaxed">Sea freight (FCL/LCL) and airfreight to Europe, Middle East, East Asia, and Oceania.</p>
+        </div>
+      </div>
+      <div class="text-center mt-12">
+        <a href="/services" class="btn-outline" style="border-color: white; color: white;">See All Services</a>
+      </div>
+    </div>
+  </section>
+</MainLayout>

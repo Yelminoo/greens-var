@@ -1,0 +1,126 @@
+---
+import '../styles/global.css'
+import NgrokBar from '../components/shared/NgrokBar.astro'
+
+interface Props {
+  title: string
+  description?: string
+  brand: 'fruithai' | 'variegata'
+}
+
+const { title, description, brand } = Astro.props
+const { isNgrok } = Astro.locals
+const isQuotePage = Astro.url.pathname === '/quote'
+
+const brandConfig = {
+  fruithai: {
+    name:        'FruThai',
+    tagline:     'Tropical Fruits from Thailand',
+    accentColor: 'var(--color-orange-fruit)',
+    homeUrl:     'http://fruithai.greensvar.com',
+    quoteUrl:    '/quote',
+  },
+  variegata: {
+    name:        'Variegata',
+    tagline:     'Fresh Vegetables, Naturally Grown',
+    accentColor: 'var(--color-teal-veg)',
+    homeUrl:     'http://variegata.greensvar.com',
+    quoteUrl:    '/quote',
+  },
+}
+
+const config = brandConfig[brand]
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description ?? config.tagline} />
+  <title>{title} | {config.name}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    @keyframes ngrok-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col" style={`--brand: ${config.accentColor}`}>
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href={config.homeUrl} class="flex items-center gap-2">
+        <span class="text-2xl font-bold font-heading" style={`color: ${config.accentColor}`}>
+          {config.name}
+        </span>
+        <span class="text-xs opacity-40 hidden sm:block">by Greens Variegated</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href={config.homeUrl} class="hover:opacity-70 transition-opacity">Home</a>
+        <a href="/products" class="hover:opacity-70 transition-opacity">Products</a>
+        <a href="/services" class="hover:opacity-70 transition-opacity">Services</a>
+        <a href="/contact" class="hover:opacity-70 transition-opacity">Contact</a>
+      </nav>
+      {isNgrok && (
+        <span style="display:inline-flex;align-items:center;gap:5px;background:#1C2B1E;color:#A8D635;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;letter-spacing:0.5px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#A8D635;display:inline-block;animation:ngrok-pulse 1.8s ease-in-out infinite;"></span>
+          PREVIEW
+        </span>
+      )}
+      <!-- Quote basket icon in nav -->
+      {isQuotePage ? (
+        <span class="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full opacity-40 cursor-not-allowed select-none"
+              style={`border:2px solid ${config.accentColor};color:${config.accentColor}`}
+              title="You're already viewing your basket">
+          🧾 <span id="nav-basket-count">0</span>
+        </span>
+      ) : (
+        <a href="/quote"
+           class="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full transition-all hover:scale-105"
+           style={`background-color:${config.accentColor};color:white`}
+           id="nav-basket-link">
+          🧾 <span id="nav-basket-count">0</span>
+        </a>
+      )}
+      {isNgrok && (
+        <span style="display:inline-flex;align-items:center;gap:5px;background:#1C2B1E;color:#A8D635;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;letter-spacing:0.5px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#A8D635;display:inline-block;animation:ngrok-pulse 1.8s ease-in-out infinite;"></span>
+          PREVIEW
+        </span>
+      )}
+    </div>
+  </header>
+
+  <main class="flex-1">
+    <slot />
+  </main>
+
+  <footer style="background-color: var(--color-dark);" class="text-white">
+    <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between gap-6">
+      <div>
+        <p class="text-xl font-bold font-heading mb-1" style={`color: ${config.accentColor}`}>{config.name}</p>
+        <p class="text-sm opacity-50">{config.tagline}</p>
+      </div>
+      <div class="text-sm opacity-50 flex items-end">
+        <a href="http://greensvar.com" class="hover:opacity-100 transition-opacity">← Back to Greens Variegated</a>
+      </div>
+    </div>
+  </footer>
+
+  {isNgrok && <NgrokBar currentBrand={brand} />}
+
+  <script>
+    function updateNavBasket() {
+      const basket = JSON.parse(localStorage.getItem('quoteBasket') ?? '[]')
+      const countEl = document.getElementById('nav-basket-count')
+      if (countEl) countEl.textContent = String(basket.length)
+    }
+    updateNavBasket()
+    window.addEventListener('quoteUpdated', updateNavBasket)
+    window.addEventListener('storage', updateNavBasket)
+  </script>
+</body>
+</html>

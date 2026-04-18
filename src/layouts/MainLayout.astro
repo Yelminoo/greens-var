@@ -1,0 +1,90 @@
+---
+import '../styles/global.css'
+import NgrokBar from '../components/shared/NgrokBar.astro'
+
+interface Props {
+  title: string
+  description?: string
+}
+
+const { title, description = 'Greens Variegated — Premium Tropical Produce' } = Astro.props
+const { isNgrok } = Astro.locals
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+  <title>{title} | Greens Variegated</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    @keyframes ngrok-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-green-100">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <span class="text-2xl font-bold font-heading" style="color: var(--color-green-primary)">
+          Greens<span style="color: var(--color-lime-accent)">.</span>
+        </span>
+      </a>
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="/about" class="hover:text-green-600 transition-colors">About</a>
+        <a href="/services" class="hover:text-green-600 transition-colors">Services</a>
+        <a href="/contact" class="hover:text-green-600 transition-colors">Contact</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        {isNgrok && (
+          <span style="display:inline-flex;align-items:center;gap:5px;background:#1C2B1E;color:#A8D635;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;letter-spacing:0.5px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#A8D635;display:inline-block;animation:ngrok-pulse 1.8s ease-in-out infinite;"></span>
+            PREVIEW
+          </span>
+        )}
+        <a href="http://fruithai.greensvar.com" class="btn-outline text-sm py-2 px-4" style="border-color: var(--color-orange-fruit); color: var(--color-orange-fruit);">
+          FruThai
+        </a>
+        <a href="http://variegata.greensvar.com" class="btn-primary text-sm py-2 px-4" style="background-color: var(--color-teal-veg);">
+          Variegata
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1">
+    <slot />
+  </main>
+
+  {isNgrok && <NgrokBar currentBrand="main" />}
+
+  <footer style="background-color: var(--color-dark);" class="text-white">
+    <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <p class="text-2xl font-bold font-heading mb-2">Greens Variegated</p>
+        <p class="text-sm opacity-60">Premium tropical produce connecting farms to global markets.</p>
+      </div>
+      <div>
+        <p class="font-semibold mb-3 opacity-80">Our Brands</p>
+        <ul class="space-y-2 text-sm opacity-60">
+          <li><a href="http://fruithai.greensvar.com" class="hover:opacity-100 transition-opacity">FruThai — Tropical Fruits</a></li>
+          <li><a href="http://variegata.greensvar.com" class="hover:opacity-100 transition-opacity">Variegata — Fresh Vegetables</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="font-semibold mb-3 opacity-80">Contact</p>
+        <p class="text-sm opacity-60">info@greensvar.com</p>
+      </div>
+    </div>
+    <div class="border-t border-white/10 text-center py-4 text-xs opacity-40">
+      © {new Date().getFullYear()} Greens Variegated. All rights reserved.
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,499 @@
+---
+import { db } from '../../../db/db'
+import { quoteRequests, quoteItems, products } from '../../../db/schema'
+import { eq, inArray } from 'drizzle-orm'
+
+const id     = Number(Astro.params.id)
+const [quote] = await db.select().from(quoteRequests).where(eq(quoteRequests.id, id))
+if (!quote) return Astro.redirect('/admin')
+
+const items = await db.select().from(quoteItems).where(eq(quoteItems.quoteId, id))
+
+// Fetch product defaults for pre-filling invoice cells
+const slugs        = items.map(i => i.productSlug).filter(Boolean)
+const productRows  = slugs.length
+  ? await db.select().from(products).where(inArray(products.slug, slugs))
+  : []
+const productMap   = Object.fromEntries(productRows.map(p => [p.slug, p]))
+
+const statusColor: Record<string, string> = {
+  pending:    '#F4821F',
+  'in-review':'#A8D635',
+  sent:       '#2D7D46',
+  accepted:   '#1A9E8F',
+  rejected:   '#e74c3c',
+}
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>{quote.ref} — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f4f0; color: #1C2B1E; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #1C2B1E; padding: 28px 20px; }
+    .sidebar .logo { font-size: 18px; font-weight: 700; color: #A8D635; margin-bottom: 24px; }
+    .sidebar a { display: block; color: rgba(255,255,255,0.6); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 4px; }
+    .sidebar a:hover { background: rgba(255,255,255,0.08); color: white; }
+    .main { margin-left: 220px; padding: 40px; max-width: 980px; }
+    .back { color: #2D7D46; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 20px; }
+    .back:hover { text-decoration: underline; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; margin-left: 10px; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: 16px; font-family: 'DM Mono', monospace; }
+    .info-grid { display: grid; grid-template-columns: 140px 1fr; gap: 8px 12px; font-size: 14px; }
+    .info-grid dt { color: #888; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 9px 10px; background: #f9fdf9; font-size: 10px; font-family: 'DM Mono', monospace; text-transform: uppercase; color: #888; white-space: nowrap; }
+    td { padding: 10px; border-top: 1px solid #f0f0f0; vertical-align: middle; }
+    input[type=number], input[type=text] { border: 1.5px solid #e0e0e0; border-radius: 7px; padding: 7px 9px; font-size: 12px; font-family: inherit; }
+    input[type=number] { width: 88px; }
+    input.wide  { width: 110px; }
+    input.marks { width: 70px; }
+    input[type=date] { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; width: 100%; }
+    textarea { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; resize: vertical; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .span2 { grid-column: 1 / -1; }
+    .span3 { grid-column: 1 / -1; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #333; }
+    .sub-label { font-size: 11px; color: #999; font-weight: 400; margin-left: 4px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; background: #2D7D46; color: white; padding: 12px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .btn:hover { background: #5CB85C; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; display: none; }
+    .alert.success { background: #e6f7ec; color: #2D7D46; }
+    .alert.error   { background: #fff0f0; color: #c0392b; }
+    .totals-row { display: flex; justify-content: flex-end; gap: 32px; margin-top: 14px; font-size: 14px; }
+    .totals-row .lbl { color: #888; }
+    .totals-row .val { font-weight: 600; min-width: 80px; text-align: right; }
+    .grand { font-size: 17px; font-weight: 700; color: #2D7D46; }
+    .section-divider { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #bbb; padding: 12px 0 8px; font-family: 'DM Mono', monospace; }
+
+    /* Spreadsheet cell inputs */
+    .cell-input {
+      border: none; background: transparent; outline: none;
+      font-family: 'DM Mono', monospace; font-size: 13px;
+      padding: 10px 8px; cursor: pointer; color: #1C2B1E;
+      transition: background .15s;
+    }
+    .cell-input::placeholder { color: #ccc; }
+    .cell-input:hover  { background: #f0faf3; cursor: text; }
+    .cell-input:focus  { background: #e6f7ec; outline: 2px solid #2D7D46; outline-offset: -2px; cursor: text; }
+    /* Hide number spinners */
+    .cell-input[type=number]::-webkit-inner-spin-button,
+    .cell-input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .cell-input[type=number] { -moz-appearance: textfield; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">GV Admin</div>
+    <a href="/admin">📋 Quotes</a>
+    <a href="/admin/quotes/new">✏️ New Quote</a>
+    <a href="/admin/products">🌿 Products</a>
+    <a href="/admin/products/new">＋ Add Product</a>
+  </nav>
+
+  <main class="main">
+    <a href="/admin" class="back">← Back to Quotes</a>
+
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:4px">
+      <h1 style="margin:0">{quote.ref}</h1>
+      <select id="status-select"
+        style={`border:2px solid ${statusColor[quote.status ?? 'pending']}; color:${statusColor[quote.status ?? 'pending']}; background:${statusColor[quote.status ?? 'pending']}18; border-radius:999px; padding:4px 14px; font-size:13px; font-weight:700; font-family:'DM Mono',monospace; cursor:pointer; outline:none;`}
+        data-quote-id={id}>
+        {(['pending','in-review','sent','accepted','rejected'] as const).map(s => (
+          <option value={s} selected={quote.status === s}>{s}</option>
+        ))}
+      </select>
+      <span id="status-saved" style="font-size:12px;color:#2D7D46;display:none">✓ Saved</span>
+    </div>
+    <p style="color:#888;font-size:13px;margin-bottom:28px;font-family:'DM Mono',monospace">
+      Received {quote.createdAt ? new Date(quote.createdAt).toLocaleString('en-GB') : '—'}
+    </p>
+
+    <!-- Buyer info -->
+    <div class="card">
+      <h2>Buyer Details</h2>
+      <dl class="info-grid">
+        <dt>Name</dt>     <dd>{quote.buyerName}</dd>
+        <dt>Company</dt>  <dd>{quote.company ?? '—'}</dd>
+        <dt>Email</dt>    <dd><a href={`mailto:${quote.email}`} style="color:#2D7D46">{quote.email}</a></dd>
+        <dt>Phone</dt>    <dd>{quote.phone ?? '—'}</dd>
+        <dt>Region</dt>   <dd>{quote.region ?? '—'}</dd>
+        <dt>Delivery</dt> <dd>{quote.deliveryDate ?? '—'}</dd>
+        <dt>Notes</dt>    <dd>{quote.notes ?? '—'}</dd>
+      </dl>
+    </div>
+
+    <!-- Invoice spreadsheet -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between">
+        <h2 style="margin:0">Invoice Line Items</h2>
+        <span style="font-size:11px;color:#aaa;font-family:'DM Mono',monospace">Click any cell to edit · Tab to move</span>
+      </div>
+
+      <!-- Invoice-style table -->
+      <div style="overflow-x:auto">
+        <table id="invoice-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <!-- Header row 1 — green, like the PDF -->
+          <thead>
+            <tr style="background:#2D7D46;color:white">
+              <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;width:80px">Marks&amp;No.</th>
+              <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;width:70px">Packages</th>
+              <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700">Description of Goods</th>
+              <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;width:80px">Qty KGS</th>
+              <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;width:100px">Unit/KG ($)</th>
+              <th style="padding:9px 12px;text-align:right;font-size:11px;font-weight:700;width:110px">Amount USD</th>
+            </tr>
+            <!-- Subheader row 2 — lighter, mirrors PDF -->
+            <tr style="background:#4a9960;color:white">
+              <th style="padding:6px 12px;text-align:center;font-size:10px;font-weight:600">ADDRESS</th>
+              <th style="padding:6px 12px;text-align:center;font-size:10px;font-weight:600">BOXES</th>
+              <th style="padding:6px 12px;text-align:left;font-size:10px;font-weight:600">FRESH FRUITS &amp; VEGETABLES</th>
+              <th style="padding:6px 12px;text-align:center;font-size:10px;font-weight:600">KGS</th>
+              <th style="padding:6px 12px;text-align:center;font-size:10px;font-weight:600">Unit/KG($)</th>
+              <th style="padding:6px 12px;text-align:right;font-size:10px;font-weight:600">Amount USD($)</th>
+            </tr>
+          </thead>
+
+          <tbody id="items-body">
+            {items.map((item, idx) => {
+              const prod = productMap[item.productSlug]
+              const qty  = item.quantity ?? 1
+              // Use saved value → product default → empty
+              const defaultKg    = item.weightKg   ?? (prod?.kgPerUnit    != null ? +(qty * prod.kgPerUnit).toFixed(2)    : null)
+              const defaultBoxes = item.packages   ?? (prod?.boxesPerUnit != null ? qty * prod.boxesPerUnit               : null)
+              const defaultPrice = item.unitPrice  ?? prod?.pricePerKg ?? null
+              return (
+              <tr data-id={item.id} style={idx % 2 === 0 ? 'background:#fff' : 'background:#f9fdf9'}>
+                <!-- Marks & No -->
+                <td style="padding:0;border-top:1px solid #eee;text-align:center">
+                  <input type="text" class="cell-input" data-field="marks" data-id={item.id}
+                    value={item.marks ?? ''} placeholder="—" style="width:100%;text-align:center" />
+                </td>
+                <!-- Packages (Boxes) -->
+                <td style="padding:0;border-top:1px solid #eee;text-align:center">
+                  <input type="number" min="0" step="1" class="cell-input" data-field="packages" data-id={item.id}
+                    value={defaultBoxes ?? ''} placeholder="—" style="width:100%;text-align:center" />
+                </td>
+                <!-- Product name (read-only) -->
+                <td style="padding:10px 12px;border-top:1px solid #eee;font-weight:600">
+                  {item.productName}
+                  <span style="display:block;font-size:11px;font-weight:400;color:#aaa;font-family:'DM Mono',monospace">
+                    ordered: {qty} {item.unit}
+                    {prod?.kgPerUnit && <span style="color:#2D7D46"> · {prod.kgPerUnit}kg/unit</span>}
+                  </span>
+                </td>
+                <!-- Weight KGS -->
+                <td style="padding:0;border-top:1px solid #eee;text-align:center">
+                  <input type="number" min="0" step="0.1" class="cell-input" data-field="weightKg" data-id={item.id}
+                    value={defaultKg ?? ''} placeholder="—" style="width:100%;text-align:center" />
+                </td>
+                <!-- Unit Price -->
+                <td style="padding:0;border-top:1px solid #eee;text-align:center">
+                  <input type="number" min="0" step="0.01" class="cell-input" data-field="unitPrice" data-id={item.id}
+                    value={defaultPrice ?? ''} placeholder="—" style="width:100%;text-align:center" />
+                </td>
+                <!-- Amount (calculated) -->
+                <td class="row-total" data-id={item.id}
+                    style="padding:10px 12px;border-top:1px solid #eee;text-align:right;font-weight:700;font-family:'DM Mono',monospace;color:#1C2B1E">
+                  —
+                </td>
+              </tr>
+            )})}
+
+          </tbody>
+
+          <!-- Totals footer -->
+          <tfoot>
+            <tr style="background:#f9fdf9;border-top:2px solid #2D7D46">
+              <td colspan="4" style="padding:10px 12px;font-size:12px;color:#2D7D46;font-weight:700">
+                Shipping Information
+              </td>
+              <td style="padding:10px 12px;text-align:right;font-size:12px;color:#555">Subtotal:</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:700;font-family:'DM Mono',monospace" id="subtotal-display">$0.00</td>
+            </tr>
+            <tr style="background:#f9fdf9">
+              <td colspan="4" style="padding:4px 12px;font-size:12px;color:#2D7D46">
+                Total Packages: <span id="pkgs-preview" style="font-weight:700;margin-left:4px">—</span>
+              </td>
+              <td style="padding:4px 12px;text-align:right;font-size:12px;color:#555">Shipping Cost:</td>
+              <td style="padding:4px 12px;text-align:right;font-size:12px;font-family:'DM Mono',monospace" id="shipping-display">$0.00</td>
+            </tr>
+            <tr style="background:#f9fdf9">
+              <td colspan="4" style="padding:4px 12px;font-size:12px;color:#2D7D46">
+                Net Weight: <span id="net-preview" style="font-weight:700;margin-left:4px">—</span>
+              </td>
+              <td style="padding:4px 12px;text-align:right;font-size:12px;color:#555">Discount:</td>
+              <td style="padding:4px 12px;text-align:right;font-size:12px;font-family:'DM Mono',monospace" id="discount-display">$0.00</td>
+            </tr>
+            <tr style="background:#f9fdf9">
+              <td colspan="4" style="padding:4px 12px 10px;font-size:12px;color:#2D7D46">
+                Gross Weight: <span id="gross-preview" style="font-weight:700;margin-left:4px">—</span>
+              </td>
+              <td style="padding:4px 12px 10px;text-align:right;font-weight:700;font-size:13px;color:#1C2B1E">GRAND TOTAL:</td>
+              <td style="padding:4px 12px 10px;text-align:right;font-weight:800;font-size:15px;color:white;background:#2D7D46;font-family:'DM Mono',monospace" id="grand-total">$0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Send quote form -->
+    {quote.status !== 'sent' && (
+      <div class="card">
+        <h2>Commercial Invoice Details &amp; Send</h2>
+        <div id="alert" class="alert"></div>
+        <form id="send-form" class="form-grid">
+
+          <div class="section-divider span2">Invoice Header</div>
+
+          <div>
+            <label>Invoice No. <span class="sub-label">optional</span></label>
+            <input type="text" name="invoiceNo" placeholder="e.g. INV-2024-001" style="width:100%" />
+          </div>
+          <div>
+            <label>Customer ID <span class="sub-label">optional</span></label>
+            <input type="text" name="customerId" placeholder="e.g. CUS-001" style="width:100%" />
+          </div>
+          <div>
+            <label>Consignee <span class="sub-label">buyer address block</span></label>
+            <textarea name="consignee" rows="3" placeholder={`${quote.buyerName}\n${quote.company ?? ''}\n${quote.email}`}></textarea>
+          </div>
+          <div>
+            <label>Shipper / Sender</label>
+            <textarea name="shipperSender" rows="3">Greens Variegated Co.,Ltd.
+Bangkok, Thailand
+info@greensvar.com</textarea>
+          </div>
+
+          <div class="section-divider span2">Shipping Summary</div>
+
+          <div>
+            <label>Total Packages <span class="sub-label">(boxes)</span></label>
+            <input type="number" name="totalPackages" min="0" step="1" placeholder="0" style="width:100%" id="total-packages-input" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label>Net Weight <span class="sub-label">KGS</span></label>
+              <input type="number" name="netWeight" min="0" step="0.1" placeholder="0.00" style="width:100%" id="net-weight-input" />
+            </div>
+            <div>
+              <label>Gross Weight <span class="sub-label">KGS</span></label>
+              <input type="number" name="grossWeight" min="0" step="0.1" placeholder="0.00" style="width:100%" id="gross-weight-input" />
+            </div>
+          </div>
+
+          <div class="section-divider span2">Pricing &amp; Terms</div>
+
+          <div>
+            <label>Shipping Cost <span class="sub-label">USD</span></label>
+            <input type="number" name="shippingCost" min="0" step="0.01" placeholder="0.00" value="0" style="width:100%"
+                   oninput="updateTotals()" id="shipping-cost-input" />
+          </div>
+          <div>
+            <label>Discount <span class="sub-label">USD</span></label>
+            <input type="number" name="discount" min="0" step="0.01" placeholder="0.00" value="0" style="width:100%"
+                   oninput="updateTotals()" id="discount-input" />
+          </div>
+          <div>
+            <label>Valid Until</label>
+            <input type="date" name="validUntil" required />
+          </div>
+          <div>
+            <label>Payment Terms</label>
+            <input type="text" name="paymentTerms" style="width:100%"
+                   value="Full payment (100%) required via bank transfer before shipment. All payments in USD." required />
+          </div>
+          <div class="span2">
+            <label>Incoterms / Delivery Terms</label>
+            <input type="text" name="deliveryTerms" style="width:100%"
+                   placeholder="e.g. C&F (Cost and Freight) - Seller pays transportation to destination port." required />
+          </div>
+          <div class="span2">
+            <label>Admin Notes <span class="sub-label">optional, printed in PDF</span></label>
+            <textarea name="adminNotes" rows="2" placeholder="Any special conditions or remarks..."></textarea>
+          </div>
+          <div class="span2">
+            <button type="submit" class="btn" id="send-btn">
+              📧 Generate PDF &amp; Send Invoice
+            </button>
+          </div>
+        </form>
+      </div>
+    )}
+
+    {quote.status === 'sent' && (
+      <div style="background:#e6f7ec;border-radius:12px;padding:20px;color:#2D7D46;font-weight:600">
+        ✅ Quote has been sent to {quote.email}
+      </div>
+    )}
+  </main>
+
+  <script>
+    // Status update
+    const statusSelect = document.getElementById('status-select') as HTMLSelectElement
+    const savedEl      = document.getElementById('status-saved')!
+    const statusColors: Record<string,string> = {
+      pending: '#F4821F', 'in-review': '#A8D635', sent: '#2D7D46', accepted: '#1A9E8F', rejected: '#e74c3c'
+    }
+    statusSelect?.addEventListener('change', async () => {
+      const status  = statusSelect.value
+      const quoteId = statusSelect.dataset.quoteId
+      const color   = statusColors[status] ?? '#888'
+      statusSelect.style.borderColor  = color
+      statusSelect.style.color        = color
+      statusSelect.style.background   = color + '18'
+      try {
+        await fetch(`/api/admin/quotes/${quoteId}`, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ status }),
+        })
+        savedEl.style.display = 'inline'
+        setTimeout(() => { savedEl.style.display = 'none' }, 2000)
+      } catch { /* silent */ }
+    })
+  </script>
+
+  <script define:vars={{ quoteId: id, itemsData: items }}>
+    // ── Live calculations ────────────────────────────────────────────────────
+    function calcAllRows() {
+      let subtotal = 0
+      document.querySelectorAll('#items-body tr').forEach(row => {
+        const rowId    = row.dataset.id
+        const kgInput  = row.querySelector('[data-field="weightKg"]')
+        const priceInp = row.querySelector('[data-field="unitPrice"]')
+        const kg    = parseFloat(kgInput?.value)  || 0
+        const price = parseFloat(priceInp?.value) || 0
+        const total = kg * price
+        subtotal += total
+        const cell = document.querySelector(`.row-total[data-id="${rowId}"]`)
+        if (cell) cell.textContent = total > 0 ? `$${total.toFixed(2)}` : '—'
+      })
+      return subtotal
+    }
+
+    function autoSumPackages() {
+      let total = 0
+      document.querySelectorAll('[data-field="packages"]').forEach(i => { total += parseInt(i.value) || 0 })
+      // Update footer preview
+      const el = document.getElementById('pkgs-preview')
+      if (el) el.textContent = total > 0 ? String(total) : '—'
+      // Sync form input if not manually overridden
+      const inp = document.getElementById('total-packages-input')
+      if (inp && !inp._touched) inp.value = total > 0 ? String(total) : ''
+    }
+
+    function autoSumWeight() {
+      let total = 0
+      document.querySelectorAll('[data-field="weightKg"]').forEach(i => { total += parseFloat(i.value) || 0 })
+      const el = document.getElementById('net-preview')
+      if (el) el.textContent = total > 0 ? `${total.toFixed(1)} KGS` : '—'
+      const inp = document.getElementById('net-weight-input')
+      if (inp && !inp._touched) inp.value = total > 0 ? total.toFixed(1) : ''
+    }
+
+    function updateTotals() {
+      const subtotal     = calcAllRows()
+      const shippingCost = parseFloat(document.getElementById('shipping-cost-input')?.value) || 0
+      const discount     = parseFloat(document.getElementById('discount-input')?.value)      || 0
+      const grand        = subtotal + shippingCost - discount
+      const $ = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = `$${v.toFixed(2)}` }
+      $('subtotal-display', subtotal)
+      $('shipping-display', shippingCost)
+      $('discount-display', discount)
+      $('grand-total',      grand)
+      autoSumPackages()
+      autoSumWeight()
+      // Sync gross preview
+      const grossEl  = document.getElementById('gross-preview')
+      const grossInp = document.getElementById('gross-weight-input') // in the form below
+      if (grossEl && grossInp) grossEl.textContent = grossInp.value ? `${grossInp.value} KGS` : '—'
+    }
+
+    // ── Wire all cell inputs ─────────────────────────────────────────────────
+    document.querySelectorAll('.cell-input').forEach(input => {
+      input.addEventListener('input', updateTotals)
+      // Select all on focus for fast overwrite
+      input.addEventListener('focus', () => input.select?.())
+    })
+
+    // Mark manual edits on form shipping inputs so auto-sum won't overwrite
+    document.getElementById('total-packages-input')?.addEventListener('input', e => { e.target._touched = true; updateTotals() })
+    document.getElementById('net-weight-input')?.addEventListener('input',     e => { e.target._touched = true; updateTotals() })
+    document.getElementById('shipping-cost-input')?.addEventListener('input',  () => updateTotals())
+    document.getElementById('discount-input')?.addEventListener('input',       () => updateTotals())
+    document.getElementById('gross-weight-input')?.addEventListener('input',   () => updateTotals())
+
+    window.updateTotals = updateTotals
+    updateTotals()
+
+    // ── Form submit ──────────────────────────────────────────────────────────
+    document.getElementById('send-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const form    = e.target
+      const btn     = document.getElementById('send-btn')
+      const alertEl = document.getElementById('alert')
+      const fd      = new FormData(form)
+
+      // Collect per-item data from spreadsheet cells
+      const pricedItems = []
+      document.querySelectorAll('#items-body tr').forEach(row => {
+        const rowId    = row.dataset.id
+        const kgInput  = row.querySelector('[data-field="weightKg"]')
+        const priceInp = row.querySelector('[data-field="unitPrice"]')
+        const kg        = parseFloat(kgInput?.value)  || 0
+        const unitPrice = parseFloat(priceInp?.value) || 0
+        const weightKg  = kg   || undefined
+        const packages  = parseInt(row.querySelector('[data-field="packages"]')?.value) || undefined
+        const marks     = row.querySelector('[data-field="marks"]')?.value || undefined
+        pricedItems.push({ id: Number(rowId), unitPrice, totalPrice: kg * unitPrice, marks, packages, weightKg })
+      })
+
+      btn.disabled    = true
+      btn.textContent = 'Sending...'
+      alertEl.style.display = 'none'
+
+      try {
+        const res = await fetch(`/api/admin/quotes/${quoteId}/send`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            invoiceNo:     fd.get('invoiceNo')     || undefined,
+            customerId:    fd.get('customerId')    || undefined,
+            consignee:     fd.get('consignee')     || undefined,
+            shipperSender: fd.get('shipperSender') || undefined,
+            validUntil:    fd.get('validUntil'),
+            paymentTerms:  fd.get('paymentTerms'),
+            deliveryTerms: fd.get('deliveryTerms'),
+            adminNotes:    fd.get('adminNotes')    || undefined,
+            shippingCost:  parseFloat(fd.get('shippingCost'))  || 0,
+            discount:      parseFloat(fd.get('discount'))      || 0,
+            totalPackages: parseInt(fd.get('totalPackages'))   || undefined,
+            netWeight:     parseFloat(fd.get('netWeight'))     || undefined,
+            grossWeight:   parseFloat(fd.get('grossWeight'))   || undefined,
+            items: pricedItems,
+          }),
+        })
+        if (!res.ok) throw new Error('Send failed')
+        alertEl.className     = 'alert success'
+        alertEl.textContent   = '✅ Invoice sent successfully! Page will reload.'
+        alertEl.style.display = 'block'
+        setTimeout(() => location.reload(), 1500)
+      } catch {
+        alertEl.className     = 'alert error'
+        alertEl.textContent   = '❌ Failed to send. Please try again.'
+        alertEl.style.display = 'block'
+        btn.disabled    = false
+        btn.textContent = '📧 Generate PDF & Send Invoice'
+      }
+    })
+  </script>
+</body>
+</html>

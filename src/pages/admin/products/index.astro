@@ -1,0 +1,171 @@
+---
+import { getAllProducts } from '../../../db/products'
+
+const products = await getAllProducts()
+
+const brandColor: Record<string, string> = {
+  fruithai:  '#F4821F',
+  variegata: '#1A9E8F',
+}
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Products — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f4f0; color: #1C2B1E; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #1C2B1E; padding: 28px 20px; }
+    .sidebar .logo { font-size: 18px; font-weight: 700; color: #A8D635; margin-bottom: 24px; }
+    .sidebar a { display: block; color: rgba(255,255,255,0.6); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 4px; transition: all .2s; }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.08); color: white; }
+    .main { margin-left: 220px; padding: 40px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 24px; font-weight: 700; }
+    .filters { display: flex; gap: 8px; }
+    .filter-btn { padding: 7px 16px; border-radius: 8px; border: 1.5px solid #ddd; background: white; font-size: 13px; cursor: pointer; transition: all .15s; font-family: inherit; }
+    .filter-btn.active { background: #1C2B1E; color: white; border-color: #1C2B1E; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; background: #2D7D46; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; transition: background .2s; border: none; cursor: pointer; }
+    .btn:hover { background: #5CB85C; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform .2s, box-shadow .2s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.1); }
+    .card-img { height: 160px; background: #f0f0f0; overflow: hidden; position: relative; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card-img .inactive-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 600; }
+    .card-body { padding: 16px; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .card-name { font-size: 16px; font-weight: 700; }
+    .card-variety { font-size: 12px; color: #888; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .seasons { display: flex; flex-wrap: wrap; gap: 3px; margin: 10px 0; }
+    .month { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: 'DM Mono', monospace; }
+    .card-footer { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #f0f0f0; }
+    .card-footer a, .card-footer button { flex: 1; text-align: center; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; font-family: inherit; transition: all .15s; }
+    .btn-edit { background: #f0f7f2; color: #2D7D46; }
+    .btn-edit:hover { background: #2D7D46; color: white; }
+    .btn-delete { background: #fff0f0; color: #e74c3c; }
+    .btn-delete:hover { background: #e74c3c; color: white; }
+    .empty { text-align: center; padding: 80px; color: #aaa; grid-column: 1/-1; }
+    .empty a { color: #2D7D46; }
+    .tag-pill { display: inline-block; background: #f0f0f0; color: #555; padding: 2px 8px; border-radius: 999px; font-size: 11px; margin: 2px; }
+    .sort-order { font-family: 'DM Mono', monospace; font-size: 11px; color: #bbb; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">GV Admin</div>
+    <a href="/admin">📋 Quotes</a>
+    <a href="/admin/quotes/new">✏️ New Quote</a>
+    <a href="/admin/products" class="active">🌿 Products</a>
+    <a href="/admin/products/new">＋ Add Product</a>
+  </nav>
+
+  <main class="main">
+    <div class="toolbar">
+      <div>
+        <h1>Products</h1>
+        <p style="font-size:13px;color:#888;margin-top:2px">{products.length} total</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div class="filters">
+          <button class="filter-btn active" onclick="filterBrand('all', this)">All</button>
+          <button class="filter-btn" onclick="filterBrand('fruithai', this)" style="border-color:#F4821F22">🍊 FruThai</button>
+          <button class="filter-btn" onclick="filterBrand('variegata', this)" style="border-color:#1A9E8F22">🥬 Variegata</button>
+        </div>
+        <a href="/admin/products/new" class="btn">＋ Add Product</a>
+      </div>
+    </div>
+
+    <div class="grid" id="product-grid">
+      {products.length === 0
+        ? (
+          <div class="empty">
+            <p style="font-size:32px;margin-bottom:12px">🌱</p>
+            <p style="margin-bottom:8px">No products yet.</p>
+            <a href="/admin/products/new">Add your first product →</a>
+          </div>
+        )
+        : products.map(p => (
+          <div class="card" data-brand={p.brand}>
+            <div class="card-img">
+              <img src={p.image ?? (p.brand === 'fruithai' ? '/images/fruithai/placeholder.svg' : '/images/variegata/placeholder.svg')} alt={p.name}
+                   onerror={`this.src='/images/${p.brand}/placeholder.svg'`} />
+              {!p.active && <div class="inactive-overlay">⏸ Inactive</div>}
+            </div>
+            <div class="card-body">
+              <div class="card-header">
+                <div>
+                  <div class="card-name">{p.name}</div>
+                  <div class="card-variety">{p.variety ?? '—'}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                  <span class="badge"
+                        style={`background:${brandColor[p.brand]}22;color:${brandColor[p.brand]}`}>
+                    {p.brand}
+                  </span>
+                  <span class="sort-order">#{p.sortOrder ?? 0}</span>
+                </div>
+              </div>
+
+              {p.tags.length > 0 && (
+                <div style="margin-bottom:8px">
+                  {p.tags.map(t => <span class="tag-pill">{t}</span>)}
+                </div>
+              )}
+
+              <div class="seasons">
+                {MONTHS.map((m, i) => (
+                  <span class="month"
+                        style={p.seasons.includes(i + 1)
+                          ? `background:${brandColor[p.brand]}22;color:${brandColor[p.brand]};font-weight:700`
+                          : 'background:#f0f0f0;color:#ccc'}>
+                    {m}
+                  </span>
+                ))}
+              </div>
+
+              <p style="font-size:12px;color:#888;margin-top:6px">
+                Unit: <span style="font-family:'DM Mono',monospace">{p.unit ?? '—'}</span>
+              </p>
+            </div>
+            <div class="card-footer">
+              <a href={`/admin/products/${p.id}`} class="btn-edit">Edit</a>
+              <button class="btn-delete" onclick={`deleteProduct(${p.id}, '${p.name}')`}>Delete</button>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </main>
+
+  <script>
+    function filterBrand(brand: string, btn: HTMLElement) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      document.querySelectorAll<HTMLElement>('#product-grid .card').forEach(card => {
+        card.style.display = (brand === 'all' || card.dataset.brand === brand) ? '' : 'none'
+      })
+    }
+
+    async function deleteProduct(id: number, name: string) {
+      if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        location.reload()
+      } else {
+        alert('Failed to delete product.')
+      }
+    }
+
+    // Make functions global
+    ;(window as any).filterBrand = filterBrand
+    ;(window as any).deleteProduct = deleteProduct
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+---
+const error = Astro.url.searchParams.get('error')
+const { isNgrok } = Astro.locals
+const isDev = import.meta.env.DEV || isNgrok
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Admin Login — Greens Variegated</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f4f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    h1 { font-size: 20px; color: #1C2B1E; margin-bottom: 4px; }
+    p.sub { font-size: 13px; color: #888; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #333; }
+    input { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 12px 14px; font-size: 14px; outline: none; transition: border-color .2s; }
+    input:focus { border-color: #2D7D46; }
+    .error { background: #fff0f0; color: #c0392b; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+    button { width: 100%; background: #2D7D46; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: background .2s; }
+    button:hover { background: #5CB85C; }
+    .logo { font-size: 24px; font-weight: 700; color: #2D7D46; margin-bottom: 24px; }
+    .dot { color: #A8D635; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Greens<span class="dot">.</span> Admin</div>
+    <h1>Sign In</h1>
+    <p class="sub">Quote management panel</p>
+    {error && <div class="error">Incorrect password. Please try again.</div>}
+    {isDev ? (
+      <div>
+        <div style="background: #f0f9ff; color: #0369a1; border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px;">
+          🔓 Development mode — authentication bypassed
+        </div>
+        <a href="/admin" style="display: block; width: 100%; background: #2D7D46; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: background .2s;">
+          Go to Admin Panel
+        </a>
+      </div>
+    ) : (
+      <form method="POST" action="/api/admin/login">
+        <div style="margin-bottom:16px">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autofocus />
+        </div>
+        <button type="submit">Sign In</button>
+      </form>
+    )}
+  </div>
+</body>
+</html>

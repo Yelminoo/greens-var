@@ -1,0 +1,407 @@
+---
+import { getProductById } from '../../../db/products'
+
+const id      = Astro.params.id
+const isNew   = id === 'edit'  // /admin/products/edit → create mode
+const product = isNew ? null : await getProductById(Number(id))
+
+if (!isNew && !product) return Astro.redirect('/admin/products')
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>{isNew ? 'New Product' : `Edit — ${product?.name}`} | Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f4f0; color: #1C2B1E; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #1C2B1E; padding: 28px 20px; }
+    .sidebar .logo { font-size: 18px; font-weight: 700; color: #A8D635; margin-bottom: 24px; }
+    .sidebar a { display: block; color: rgba(255,255,255,0.6); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 4px; }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.08); color: white; }
+    .main { margin-left: 220px; padding: 40px; max-width: 860px; }
+    .back { color: #2D7D46; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 20px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 28px; }
+    .card { background: white; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #888; font-family: 'DM Mono', monospace; margin-bottom: 20px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #444; }
+    input[type=text], input[type=number], input[type=url], select, textarea {
+      width: 100%; border: 1.5px solid #e0e0e0; border-radius: 10px;
+      padding: 10px 14px; font-size: 14px; font-family: inherit;
+      transition: border-color .2s; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #2D7D46; }
+    textarea { resize: vertical; }
+    .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+    /* Season picker */
+    .season-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; }
+    .month-btn {
+      aspect-ratio: 1; border-radius: 8px; border: 2px solid #e0e0e0;
+      font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 600;
+      cursor: pointer; background: white; transition: all .15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .month-btn.selected { border-color: #2D7D46; background: #2D7D46; color: white; }
+    .month-btn.fruithai.selected  { border-color: #F4821F; background: #F4821F; }
+    .month-btn.variegata.selected { border-color: #1A9E8F; background: #1A9E8F; }
+
+    /* Tags input */
+    .tags-wrapper { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; min-height: 46px; cursor: text; }
+    .tags-wrapper:focus-within { border-color: #2D7D46; }
+    .tag-chip { display: inline-flex; align-items: center; gap: 4px; background: #e8f5ec; color: #2D7D46; padding: 3px 10px 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .tag-chip button { background: none; border: none; cursor: pointer; color: #2D7D46; font-size: 14px; line-height: 1; padding: 0; }
+    .tag-input { border: none; outline: none; font-size: 13px; font-family: inherit; min-width: 80px; flex: 1; }
+
+    /* Image preview */
+    .img-preview { width: 100%; height: 160px; border-radius: 10px; object-fit: cover; background: #f0f0f0; display: block; margin-top: 8px; }
+
+    .actions { display: flex; gap: 12px; align-items: center; }
+    .btn-save { background: #2D7D46; color: white; border: none; border-radius: 10px; padding: 14px 32px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s; font-family: inherit; }
+    .btn-save:hover { background: #5CB85C; }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cancel { color: #888; text-decoration: none; font-size: 14px; }
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; display: none; }
+    .alert.success { background: #e6f7ec; color: #2D7D46; }
+    .alert.error   { background: #fff0f0; color: #c0392b; }
+
+    .toggle { display: flex; align-items: center; gap: 10px; }
+    .toggle input[type=checkbox] { width: 18px; height: 18px; accent-color: #2D7D46; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">GV Admin</div>
+    <a href="/admin">📋 Quotes</a>
+    <a href="/admin/quotes/new">✏️ New Quote</a>
+    <a href="/admin/products" class="active">🌿 Products</a>
+    <a href="/admin/products/new">＋ Add Product</a>
+  </nav>
+
+  <main class="main">
+    <a href="/admin/products" class="back">← Products</a>
+    <h1>{isNew ? '＋ New Product' : `Edit: ${product?.name}`}</h1>
+
+    <div id="alert" class="alert"></div>
+
+    <!-- Basic info -->
+    <div class="card">
+      <h2>Basic Information</h2>
+      <div class="grid-2">
+        <div>
+          <label for="name">Product Name *</label>
+          <input type="text" id="name" value={product?.name ?? ''} placeholder="e.g. Mango" />
+        </div>
+        <div>
+          <label for="brand">Brand *</label>
+          <select id="brand">
+            <option value="fruithai"  selected={product?.brand === 'fruithai'  || !product}>FruThai (Fruits)</option>
+            <option value="variegata" selected={product?.brand === 'variegata'}>Variegata (Vegetables)</option>
+          </select>
+        </div>
+        <div>
+          <label for="slug">Slug *</label>
+          <input type="text" id="slug" value={product?.slug ?? ''} placeholder="e.g. nam-dok-mai-mango"
+                 style="font-family:'DM Mono',monospace" />
+          <p class="hint">URL-friendly identifier. Lowercase, hyphens only. Auto-filled from name.</p>
+        </div>
+        <div>
+          <label for="variety">Variety</label>
+          <input type="text" id="variety" value={product?.variety ?? ''} placeholder="e.g. Nam Dok Mai / Mahachanok" />
+        </div>
+        <div class="full">
+          <label for="origin">Origin</label>
+          <input type="text" id="origin" value={product?.origin ?? ''} placeholder="e.g. Chiang Mai & Phetchabun, Thailand" />
+        </div>
+        <div class="full">
+          <label for="description">Description</label>
+          <textarea id="description" rows="4" placeholder="Describe the product for buyers...">{product?.description ?? ''}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logistics -->
+    <div class="card">
+      <h2>Logistics & Display</h2>
+      <div class="grid-3">
+        <div>
+          <label for="unit">Pack Unit</label>
+          <input type="text" id="unit" value={product?.unit ?? ''} placeholder="e.g. carton (5 kg)" />
+        </div>
+        <div>
+          <label for="sortOrder">Sort Order</label>
+          <input type="number" id="sortOrder" value={product?.sortOrder ?? 0} min="0" />
+          <p class="hint">Lower numbers appear first in the gallery.</p>
+        </div>
+        <div>
+          <label>Status</label>
+          <div class="toggle" style="margin-top:12px">
+            <input type="checkbox" id="active" checked={product?.active !== false} />
+            <label for="active" style="margin:0;font-weight:400;cursor:pointer">Active (visible on site)</label>
+          </div>
+        </div>
+        <div class="full">
+          <label for="image">Image URL</label>
+          <input type="text" id="image" value={product?.image ?? ''} placeholder="/images/fruithai/mango.jpg or https://..." />
+          <img id="img-preview" class="img-preview"
+               src={product?.image ?? '/images/placeholder.svg'}
+               onerror="this.src='/images/placeholder.svg'" />
+        </div>
+        <div class="full">
+          <label>Tags</label>
+          <div class="tags-wrapper" id="tags-wrapper" onclick="document.getElementById('tag-input').focus()">
+            <!-- chips injected by JS -->
+            <input id="tag-input" class="tag-input" placeholder="Type a tag and press Enter" />
+          </div>
+          <p class="hint">e.g. bestseller, export-grade, premium, year-round</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice defaults -->
+    <div class="card">
+      <h2>Invoice Defaults</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:20px">
+        These auto-fill the commercial invoice when a quote is built. All editable per-quote.
+      </p>
+      <div class="grid-3">
+        <div>
+          <label for="kgPerUnit">KG per Unit</label>
+          <input type="number" id="kgPerUnit" min="0" step="0.1"
+                 value={product?.kgPerUnit ?? ''}
+                 placeholder="e.g. 5" />
+          <p class="hint">Net weight of 1 ordered unit (carton/bag) in KGS</p>
+        </div>
+        <div>
+          <label for="boxesPerUnit">Boxes per Unit</label>
+          <input type="number" id="boxesPerUnit" min="1" step="1"
+                 value={product?.boxesPerUnit ?? ''}
+                 placeholder="e.g. 1" />
+          <p class="hint">Number of boxes/packages per 1 ordered unit</p>
+        </div>
+        <div>
+          <label for="pricePerKg">Price per KG (USD)</label>
+          <input type="number" id="pricePerKg" min="0" step="0.01"
+                 value={product?.pricePerKg ?? ''}
+                 placeholder="e.g. 2.50" />
+          <p class="hint">Suggested base price — editable on each quote</p>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:12px 16px;background:#f9fdf9;border-radius:10px;font-size:12px;color:#555;font-family:'DM Mono',monospace" id="invoice-preview">
+        <!-- JS fills this -->
+      </div>
+    </div>
+
+    <!-- Seasonal availability -->
+    <div class="card">
+      <h2>Seasonal Availability</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:16px">Click months to toggle availability. Highlighted = in season.</p>
+      <div class="season-grid" id="season-grid">
+        {MONTHS.map((m, i) => (
+          <button type="button"
+                  class={`month-btn ${product?.seasons.includes(i + 1) ? 'selected' : ''}`}
+                  data-month={i + 1}
+                  onclick="toggleMonth(this)">
+            {m}
+          </button>
+        ))}
+      </div>
+      <p style="font-size:12px;color:#aaa;margin-top:12px" id="season-summary">
+        {product?.seasons.length
+          ? `${product.seasons.length} month${product.seasons.length > 1 ? 's' : ''} selected`
+          : 'No months selected'}
+      </p>
+    </div>
+
+    <div id="alert-bottom" class="alert"></div>
+
+    <div class="actions">
+      <button class="btn-save" id="save-btn" onclick="saveProduct()">
+        {isNew ? 'Create Product' : 'Save Changes'}
+      </button>
+      <a href="/admin/products" class="btn-cancel">Cancel</a>
+    </div>
+  </main>
+
+  <script define:vars={{ productId: product?.id ?? null, isNew, initialTags: product?.tags ?? [] }}>
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+    // ── Tags ──────────────────────────────────────────────────
+    let tags = [...initialTags]
+
+    function renderTags() {
+      const wrapper = document.getElementById('tags-wrapper')
+      const input   = document.getElementById('tag-input')
+      wrapper.querySelectorAll('.tag-chip').forEach(c => c.remove())
+      tags.forEach(tag => {
+        const chip = document.createElement('span')
+        chip.className = 'tag-chip'
+        chip.innerHTML = `${tag}<button onclick="removeTag('${tag}')" title="Remove">×</button>`
+        wrapper.insertBefore(chip, input)
+      })
+    }
+
+    function addTag(value) {
+      const tag = value.trim().toLowerCase().replace(/\s+/g, '-')
+      if (tag && !tags.includes(tag)) { tags.push(tag); renderTags() }
+    }
+
+    function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags() }
+
+    document.getElementById('tag-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault()
+        addTag(e.target.value)
+        e.target.value = ''
+      }
+      if (e.key === 'Backspace' && e.target.value === '' && tags.length) {
+        removeTag(tags[tags.length - 1])
+      }
+    })
+
+    window.removeTag = removeTag
+    renderTags()
+
+    // ── Slug auto-fill ────────────────────────────────────────
+    document.getElementById('name').addEventListener('input', e => {
+      if (isNew || !document.getElementById('slug').value) {
+        document.getElementById('slug').value = e.target.value
+          .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      }
+    })
+
+    // ── Image preview ─────────────────────────────────────────
+    document.getElementById('image').addEventListener('input', e => {
+      const preview = document.getElementById('img-preview')
+      preview.src = e.target.value || '/images/placeholder.svg'
+    })
+
+    // ── Season toggle ─────────────────────────────────────────
+    function toggleMonth(btn) {
+      btn.classList.toggle('selected')
+      const brand = document.getElementById('brand').value
+      btn.classList.remove('fruithai', 'variegata')
+      if (btn.classList.contains('selected')) btn.classList.add(brand)
+      updateSeasonSummary()
+    }
+
+    function updateSeasonSummary() {
+      const selected = document.querySelectorAll('.month-btn.selected').length
+      document.getElementById('season-summary').textContent =
+        selected ? `${selected} month${selected > 1 ? 's' : ''} selected` : 'No months selected'
+    }
+
+    // Update month button colour when brand changes
+    document.getElementById('brand').addEventListener('change', () => {
+      const brand = document.getElementById('brand').value
+      document.querySelectorAll('.month-btn.selected').forEach(btn => {
+        btn.classList.remove('fruithai', 'variegata')
+        btn.classList.add(brand)
+      })
+    })
+
+    // Set initial colours
+    ;(function() {
+      const brand = document.getElementById('brand').value
+      document.querySelectorAll('.month-btn.selected').forEach(btn => btn.classList.add(brand))
+    })()
+
+    window.toggleMonth = toggleMonth
+
+    // ── Invoice defaults preview ──────────────────────────────
+    function updateInvoicePreview() {
+      const kg    = parseFloat(document.getElementById('kgPerUnit').value)    || null
+      const boxes = parseInt(document.getElementById('boxesPerUnit').value)   || null
+      const price = parseFloat(document.getElementById('pricePerKg').value)   || null
+      const el    = document.getElementById('invoice-preview')
+      if (!el) return
+      if (!kg && !boxes && !price) {
+        el.textContent = 'Set values above to preview how they appear on an invoice for 1 unit ordered.'
+        return
+      }
+      const parts = []
+      if (boxes) parts.push(`📦 ${boxes} box${boxes > 1 ? 'es' : ''} per unit`)
+      if (kg)    parts.push(`⚖️  ${kg} KGS per unit`)
+      if (price) parts.push(`💵 $${price.toFixed(2)} / KG`)
+      if (kg && price) parts.push(`→ 1 unit = $${(kg * price).toFixed(2)} total`)
+      el.textContent = parts.join('  ·  ')
+    }
+
+    ['kgPerUnit','boxesPerUnit','pricePerKg'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', updateInvoicePreview)
+    })
+    updateInvoicePreview()
+
+    // ── Save ──────────────────────────────────────────────────
+    async function saveProduct() {
+      const alertEl    = document.getElementById('alert')
+      const alertBot   = document.getElementById('alert-bottom')
+      const btn        = document.getElementById('save-btn')
+
+      const payload = {
+        slug:        document.getElementById('slug').value.trim(),
+        brand:       document.getElementById('brand').value,
+        name:        document.getElementById('name').value.trim(),
+        variety:     document.getElementById('variety').value.trim() || undefined,
+        origin:      document.getElementById('origin').value.trim() || undefined,
+        description: document.getElementById('description').value.trim() || undefined,
+        image:       document.getElementById('image').value.trim() || undefined,
+        unit:        document.getElementById('unit').value.trim() || undefined,
+        sortOrder:    Number(document.getElementById('sortOrder').value) || 0,
+        active:       document.getElementById('active').checked,
+        tags,
+        seasons:      [...document.querySelectorAll('.month-btn.selected')].map(b => Number(b.dataset.month)),
+        kgPerUnit:    parseFloat(document.getElementById('kgPerUnit').value)    || undefined,
+        boxesPerUnit: parseInt(document.getElementById('boxesPerUnit').value)   || undefined,
+        pricePerKg:   parseFloat(document.getElementById('pricePerKg').value)   || undefined,
+      }
+
+      if (!payload.name || !payload.slug) {
+        for (const el of [alertEl, alertBot]) {
+          el.className = 'alert error'; el.textContent = '⚠️ Name and slug are required.'; el.style.display = 'block'
+        }
+        return
+      }
+
+      btn.disabled    = true
+      btn.textContent = isNew ? 'Creating...' : 'Saving...'
+      for (const el of [alertEl, alertBot]) { el.style.display = 'none' }
+
+      try {
+        const url    = isNew ? '/api/admin/products' : `/api/admin/products/${productId}`
+        const method = isNew ? 'POST' : 'PUT'
+        const res    = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error ?? 'Save failed')
+
+        for (const el of [alertEl, alertBot]) {
+          el.className = 'alert success'
+          el.textContent = isNew ? `✅ Product created!` : '✅ Changes saved!'
+          el.style.display = 'block'
+        }
+
+        if (isNew) setTimeout(() => window.location.href = `/admin/products/${json.id}`, 1200)
+      } catch (err) {
+        for (const el of [alertEl, alertBot]) {
+          el.className = 'alert error'; el.textContent = `❌ ${err.message}`; el.style.display = 'block'
+        }
+        btn.disabled    = false
+        btn.textContent = isNew ? 'Create Product' : 'Save Changes'
+      }
+    }
+
+    window.saveProduct = saveProduct
+  </script>
+</body>
+</html>

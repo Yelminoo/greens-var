@@ -1,0 +1,164 @@
+---
+import BrandLayout from '../layouts/BrandLayout.astro'
+const brand = Astro.locals.brand as 'fruithai' | 'variegata'
+const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--color-orange-fruit)'
+---
+
+<BrandLayout title="Request a Quote" brand={brand === 'main' ? 'fruithai' : brand}>
+  <div class="max-w-4xl mx-auto px-6 py-16">
+    <h1 class="text-4xl font-bold mb-2" style="font-family: var(--font-heading)">Request a Quote</h1>
+    <p class="opacity-60 mb-12">Review your selected products, set quantities, and fill in your details. We'll respond within 24 hours.</p>
+
+    <!-- Basket items (rendered by JS) -->
+    <div id="basket-section" class="mb-10">
+      <h2 class="text-xl font-semibold mb-4">Selected Products</h2>
+      <div id="basket-empty" class="hidden text-center py-12 rounded-2xl border-2 border-dashed border-gray-200">
+        <p class="opacity-40 mb-4">Your quote basket is empty.</p>
+        <a href="/" class="btn-primary text-sm" style={`background-color: ${accentColor}`}>Browse Products</a>
+      </div>
+      <div id="basket-items" class="space-y-3"></div>
+    </div>
+
+    <!-- Contact form -->
+    <form id="quote-form" class="space-y-6" novalidate>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-semibold mb-1.5">Full Name <span class="text-red-400">*</span></label>
+          <input type="text" name="buyerName" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" style={`--tw-ring-color: ${accentColor}`} />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1.5">Company</label>
+          <input type="text" name="company" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1.5">Email <span class="text-red-400">*</span></label>
+          <input type="email" name="email" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1.5">Phone</label>
+          <input type="tel" name="phone" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1.5">Destination Country / Region <span class="text-red-400">*</span></label>
+          <input type="text" name="region" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1.5">Target Delivery Date</label>
+          <input type="date" name="deliveryDate" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1.5">Additional Notes</label>
+        <textarea name="notes" rows="4" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 resize-none"
+                  placeholder="Packing preferences, certifications needed, special requirements..."></textarea>
+      </div>
+
+      <div id="form-error" class="hidden bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm"></div>
+
+      <button type="submit" id="submit-btn"
+              class="w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all"
+              style={`background-color: ${accentColor}`}>
+        Submit Quote Request
+      </button>
+    </form>
+
+    <!-- Success state -->
+    <div id="success" class="hidden text-center py-16">
+      <div class="text-5xl mb-4">✅</div>
+      <h2 class="text-2xl font-bold mb-2" style="font-family: var(--font-heading)">Quote Request Sent!</h2>
+      <p class="opacity-60 mb-2">We'll get back to you within 24 hours with pricing and availability.</p>
+      <p id="ref-number" class="font-mono text-sm opacity-50 mb-8"></p>
+      <a href="/" class="btn-primary" style={`background-color: ${accentColor}`}>Back to Products</a>
+    </div>
+  </div>
+</BrandLayout>
+
+<script>
+  import { getBasket, updateQuantity, removeFromBasket, clearBasket } from '../lib/quoteBasket'
+
+  const accentColor = document.body.style.getPropertyValue('--brand') || 'var(--color-orange-fruit)'
+
+  function renderBasket() {
+    const basket = getBasket()
+    const itemsEl = document.getElementById('basket-items')!
+    const emptyEl = document.getElementById('basket-empty')!
+
+    if (basket.length === 0) {
+      emptyEl.classList.remove('hidden')
+      itemsEl.innerHTML = ''
+      return
+    }
+    emptyEl.classList.add('hidden')
+    itemsEl.innerHTML = basket.map(item => `
+      <div class="flex items-center gap-4 bg-white rounded-xl p-4 border border-gray-100">
+        <div class="flex-1">
+          <p class="font-semibold">${item.name}</p>
+          <p class="text-xs opacity-50 font-mono">${item.unit}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs opacity-50">Qty</label>
+          <input type="number" min="1" value="${item.quantity}"
+                 class="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center"
+                 onchange="window.__updateQty('${item.slug}', +this.value)" />
+        </div>
+        <button onclick="window.__removeItem('${item.slug}')"
+                class="text-red-400 hover:text-red-600 text-sm px-2 transition-colors">✕</button>
+      </div>
+    `).join('')
+  }
+
+  ;(window as any).__updateQty = (slug: string, qty: number) => {
+    updateQuantity(slug, qty)
+    renderBasket()
+  }
+  ;(window as any).__removeItem = (slug: string) => {
+    removeFromBasket(slug)
+    renderBasket()
+  }
+
+  renderBasket()
+  window.addEventListener('quoteUpdated', renderBasket)
+
+  // Form submission
+  document.getElementById('quote-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const form = e.target as HTMLFormElement
+    const basket = getBasket()
+    const errorEl = document.getElementById('form-error')!
+    const btn = document.getElementById('submit-btn') as HTMLButtonElement
+
+    if (basket.length === 0) {
+      errorEl.textContent = 'Please add at least one product to your quote.'
+      errorEl.classList.remove('hidden')
+      return
+    }
+
+    btn.textContent = 'Submitting...'
+    btn.disabled = true
+    errorEl.classList.add('hidden')
+
+    const data = Object.fromEntries(new FormData(form))
+
+    try {
+      const res = await fetch('/api/quotes/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, items: basket }),
+      })
+      const json = await res.json()
+
+      if (!res.ok) throw new Error(json.error ?? 'Submission failed')
+
+      clearBasket()
+      form.classList.add('hidden')
+      document.getElementById('basket-section')!.classList.add('hidden')
+      document.getElementById('success')!.classList.remove('hidden')
+      document.getElementById('ref-number')!.textContent = `Reference: ${json.ref}`
+    } catch (err: any) {
+      errorEl.textContent = err.message
+      errorEl.classList.remove('hidden')
+      btn.textContent = 'Submit Quote Request'
+      btn.disabled = false
+    }
+  })
+</script>

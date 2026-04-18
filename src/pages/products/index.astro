@@ -1,0 +1,274 @@
+---
+import BrandLayout from '../../layouts/BrandLayout.astro'
+import { getProductsByBrand } from '../../db/products'
+
+const brand       = Astro.locals.brand as 'fruithai' | 'variegata'
+const products    = await getProductsByBrand(brand)
+const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--color-orange-fruit)'
+const accentHex   = brand === 'variegata' ? '#1A9E8F' : '#F4821F'
+const fallback    = brand === 'variegata' ? '/images/variegata/placeholder.svg' : '/images/fruithai/placeholder.svg'
+const brandLabel  = brand === 'variegata' ? 'Variegata' : 'FruThai'
+---
+
+<BrandLayout title="Products" brand={brand}>
+  <div class="max-w-7xl mx-auto px-6 py-12 pb-32">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm opacity-50 mb-6 font-mono flex items-center gap-2">
+      <a href="/" class="hover:opacity-100 transition-opacity">{brandLabel}</a>
+      <span>/</span>
+      <span class="font-semibold" style={`color:${accentColor};opacity:1`}>Products</span>
+    </nav>
+
+    <div class="flex items-end justify-between mb-8 gap-4 flex-wrap">
+      <div>
+        <h1 class="text-3xl font-bold font-heading">Our Products</h1>
+        <p class="text-sm opacity-50 mt-1 flex items-center gap-1.5">
+          <span>{products.length} products</span>
+          <span class="opacity-40">·</span>
+          <!-- Selection tip -->
+          <span class="inline-flex items-center gap-1">
+            Tap
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border-2 align-middle" style={`border-color:${accentHex}`}>
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke={accentHex} stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            to add to quote · tap card to view details
+          </span>
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="select-all-btn"
+          class="text-sm font-semibold px-4 py-2 rounded-full border-2 transition-colors hidden"
+          style={`border-color:${accentHex};color:${accentHex}`}>
+          Select All
+        </button>
+      </div>
+    </div>
+
+    <!-- Product grid -->
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="product-grid">
+      {products.map(p => (
+        <article
+          class="selectable-card bg-white rounded-2xl overflow-hidden shadow-sm border-2 border-transparent transition-all duration-200 hover:shadow-md group"
+          data-slug={p.slug}
+          data-name={p.name}
+          data-unit={p.unit ?? 'unit'}
+          data-brand={brand}
+          data-accent={accentHex}
+        >
+          <!-- Image + select button -->
+          <div class="relative h-48 bg-gray-100 overflow-hidden">
+            <!-- Card is a link to details -->
+            <a href={`/products/${p.slug}`} class="block w-full h-full">
+              <img
+                src={p.image || fallback}
+                alt={p.name}
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                onerror={`this.src='${fallback}'`}
+                loading="lazy"
+              />
+            </a>
+
+            <!-- Tags -->
+            <div class="absolute top-2 left-2 flex flex-wrap gap-1 pointer-events-none">
+              {p.tags.slice(0, 2).map(tag => (
+                <span class="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+                      style={`background-color:${accentColor}`}>{tag}</span>
+              ))}
+            </div>
+
+            <!-- SELECT TOGGLE BUTTON — top right corner -->
+            <button
+              class="select-btn absolute top-2 right-2 w-8 h-8 rounded-full border-2 bg-white/80 backdrop-blur-sm flex items-center justify-center transition-all duration-200 hover:scale-110 z-10"
+              style={`border-color:${accentHex}`}
+              title="Add to quote selection"
+              aria-label="Select for quote"
+            >
+              <!-- Empty state: faint plus -->
+              <svg class="icon-add" width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M6.5 2v9M2 6.5h9" stroke={accentHex} stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <!-- Selected state: checkmark (hidden by default) -->
+              <svg class="icon-check hidden" width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M2 6.5L5 9.5L11 3.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Card body — also a link to details -->
+          <a href={`/products/${p.slug}`} class="block p-4 hover:no-underline">
+            <h3 class="font-bold text-base font-heading leading-tight">{p.name}</h3>
+            <p class="text-xs opacity-40 font-mono mt-0.5 mb-2">{p.variety}</p>
+            <p class="text-sm opacity-60 line-clamp-2 leading-relaxed">{p.description}</p>
+            <p class="text-xs font-mono opacity-40 mt-2">Unit: {p.unit}</p>
+          </a>
+
+          <!-- Qty row — only visible when selected -->
+          <div class="qty-row hidden px-4 pb-4">
+            <div class="flex items-center gap-2 rounded-xl px-3 py-2" style={`background:${accentHex}12`}>
+              <span class="text-xs font-semibold opacity-60 shrink-0">Qty</span>
+              <button class="qty-dec w-7 h-7 rounded-full font-bold text-base flex items-center justify-center transition-colors hover:opacity-80"
+                      style={`background:${accentHex}25;color:${accentHex}`}>−</button>
+              <input type="number" class="qty-input w-12 text-center text-sm font-bold border-none bg-transparent outline-none" value="1" min="1" />
+              <button class="qty-inc w-7 h-7 rounded-full font-bold text-base flex items-center justify-center transition-colors hover:opacity-80"
+                      style={`background:${accentHex}25;color:${accentHex}`}>+</button>
+              <span class="text-xs opacity-40 ml-auto truncate">{p.unit}</span>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    {products.length === 0 && (
+      <div class="text-center py-24 opacity-40">
+        <p class="text-5xl mb-4">🌿</p>
+        <p class="font-semibold">No products found</p>
+      </div>
+    )}
+  </div>
+
+  <!-- Sticky selection bar — slides up when items selected -->
+  <div id="selection-bar"
+       class="fixed bottom-0 left-0 right-0 z-40 translate-y-full transition-transform duration-300 shadow-2xl"
+       style={`background:${accentHex}`}>
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div class="text-white">
+        <span id="selected-count" class="text-xl font-bold">0</span>
+        <span class="text-sm opacity-80 ml-2">item(s) selected for quote</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="clear-selection" class="text-sm text-white/70 hover:text-white transition-colors">
+          Clear all
+        </button>
+        <button id="add-selected-btn"
+                class="bg-white font-bold text-sm px-6 py-2.5 rounded-full transition-transform hover:scale-105"
+                style={`color:${accentHex}`}>
+          🧾 Add to Quote Basket
+        </button>
+        <a href="/quote"
+           class="bg-white/20 hover:bg-white/30 text-white font-semibold text-sm px-5 py-2.5 rounded-full transition-colors border border-white/30">
+          View Basket →
+        </a>
+      </div>
+    </div>
+  </div>
+</BrandLayout>
+
+<script>
+  import { addToBasket } from '../../lib/quoteBasket'
+
+  const cards       = Array.from(document.querySelectorAll<HTMLElement>('.selectable-card'))
+  const bar         = document.getElementById('selection-bar')!
+  const countEl     = document.getElementById('selected-count')!
+  const clearBtn    = document.getElementById('clear-selection')!
+  const addBtn      = document.getElementById('add-selected-btn')!
+  const selectAllBtn = document.getElementById('select-all-btn')!
+
+  if (cards.length > 0) selectAllBtn.classList.remove('hidden')
+
+  // ── Selection state ──────────────────────────────────────────────────────
+  function getSelected() { return cards.filter(c => c.dataset.selected === 'true') }
+
+  function selectCard(card: HTMLElement) {
+    const accent = card.dataset.accent!
+    card.dataset.selected        = 'true'
+    card.style.borderColor       = accent
+    card.style.transform         = 'translateY(-2px)'
+    card.style.boxShadow         = `0 8px 24px ${accent}35`
+
+    const btn   = card.querySelector<HTMLElement>('.select-btn')!
+    btn.style.backgroundColor = accent
+    btn.style.borderColor     = accent
+    btn.querySelector('.icon-add')!.classList.add('hidden')
+    btn.querySelector('.icon-check')!.classList.remove('hidden')
+
+    card.querySelector('.qty-row')!.classList.remove('hidden')
+  }
+
+  function deselectCard(card: HTMLElement) {
+    card.dataset.selected  = 'false'
+    card.style.borderColor = 'transparent'
+    card.style.transform   = ''
+    card.style.boxShadow   = ''
+
+    const btn = card.querySelector<HTMLElement>('.select-btn')!
+    btn.style.backgroundColor = ''
+    btn.style.borderColor     = card.dataset.accent!
+    btn.querySelector('.icon-add')!.classList.remove('hidden')
+    btn.querySelector('.icon-check')!.classList.add('hidden')
+
+    card.querySelector('.qty-row')!.classList.add('hidden')
+  }
+
+  function updateBar() {
+    const sel = getSelected()
+    countEl.textContent = String(sel.length)
+
+    if (sel.length > 0) {
+      bar.classList.remove('translate-y-full')
+    } else {
+      bar.classList.add('translate-y-full')
+    }
+
+    const allSelected = sel.length === cards.length
+    selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All'
+  }
+
+  // ── Wire select buttons ───────────────────────────────────────────────────
+  cards.forEach(card => {
+    const btn = card.querySelector<HTMLButtonElement>('.select-btn')!
+    const dec = card.querySelector<HTMLButtonElement>('.qty-dec')!
+    const inc = card.querySelector<HTMLButtonElement>('.qty-inc')!
+    const inp = card.querySelector<HTMLInputElement>('.qty-input')!
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (card.dataset.selected === 'true') deselectCard(card)
+      else selectCard(card)
+      updateBar()
+    })
+
+    dec.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const v = parseInt(inp.value) || 1
+      if (v > 1) inp.value = String(v - 1)
+    })
+    inc.addEventListener('click', (e) => {
+      e.stopPropagation()
+      inp.value = String((parseInt(inp.value) || 1) + 1)
+    })
+    inp.addEventListener('click', e => e.stopPropagation())
+  })
+
+  // ── Toolbar actions ───────────────────────────────────────────────────────
+  selectAllBtn.addEventListener('click', () => {
+    const allSelected = getSelected().length === cards.length
+    cards.forEach(c => allSelected ? deselectCard(c) : selectCard(c))
+    updateBar()
+  })
+
+  clearBtn.addEventListener('click', () => {
+    cards.forEach(deselectCard)
+    updateBar()
+  })
+
+  addBtn.addEventListener('click', () => {
+    const selected = getSelected()
+    selected.forEach(card => {
+      const qty = parseInt(card.querySelector<HTMLInputElement>('.qty-input')!.value) || 1
+      addToBasket({
+        slug:     card.dataset.slug!,
+        name:     card.dataset.name!,
+        unit:     card.dataset.unit!,
+        quantity: qty,
+        brand:    card.dataset.brand!,
+      })
+    })
+    const n = selected.length
+    addBtn.textContent = `✓ ${n} item${n > 1 ? 's' : ''} added!`
+    setTimeout(() => { addBtn.textContent = '🧾 Add to Quote Basket' }, 2200)
+    cards.forEach(deselectCard)
+    updateBar()
+  })
+</script>

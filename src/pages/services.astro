@@ -1,0 +1,52 @@
+---
+import MainLayout from '../layouts/MainLayout.astro'
+---
+
+<MainLayout title="Our Services">
+  <section class="max-w-5xl mx-auto px-6 py-20">
+    <h1 class="text-4xl font-bold font-heading mb-4" style="color: var(--color-green-primary)">Our Services</h1>
+    <p class="text-lg text-gray-500 mb-16 max-w-2xl">
+      From farm to port, Greens Variegated handles every step of the export process — so you receive fresh, certified produce with full documentation, on time.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="border border-green-100 rounded-2xl p-8 hover:shadow-md transition-shadow">
+        <div class="text-3xl mb-4">🌱</div>
+        <h2 class="text-xl font-bold font-heading mb-2">Sourcing & Selection</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Direct relationships with certified farms across Thailand. We select produce at peak season for maximum shelf life and flavour on arrival.
+        </p>
+      </div>
+
+      <div class="border border-green-100 rounded-2xl p-8 hover:shadow-md transition-shadow">
+        <div class="text-3xl mb-4">📦</div>
+        <h2 class="text-xl font-bold font-heading mb-2">Packing & Cold Chain</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          GAP-certified packing facilities with temperature-controlled storage. Custom packing formats available for retail, foodservice, and wholesale.
+        </p>
+      </div>
+
+      <div class="border border-green-100 rounded-2xl p-8 hover:shadow-md transition-shadow">
+        <div class="text-3xl mb-4">🚢</div>
+        <h2 class="text-xl font-bold font-heading mb-2">Export & Logistics</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Sea and air freight options with full export documentation — phytosanitary certificates, COO, commercial invoice, and packing list included.
+        </p>
+      </div>
+
+      <div class="border border-green-100 rounded-2xl p-8 hover:shadow-md transition-shadow">
+        <div class="text-3xl mb-4">📋</div>
+        <h2 class="text-xl font-bold font-heading mb-2">Custom Quotation</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Request a tailored price quote by product, volume, destination, and season. Our team responds within 1 business day with a detailed PDF quote.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-16 text-center">
+      <a href="/contact" class="btn-primary px-8 py-3" style="background-color: var(--color-green-primary)">
+        Get in Touch
+      </a>
+    </div>
+  </section>
+</MainLayout>

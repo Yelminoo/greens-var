@@ -1,0 +1,63 @@
+---
+interface Props {
+  slug:        string
+  name:        string
+  variety:     string
+  description: string
+  image:       string
+  unit:        string
+  tags:        string[]
+  accentColor: string
+  brand:       string
+}
+
+const { slug, name, variety, description, image, unit, tags, accentColor, brand } = Astro.props
+
+const fallback = brand === 'fruithai'
+  ? '/images/fruithai/placeholder.svg'
+  : brand === 'variegata'
+    ? '/images/variegata/placeholder.svg'
+    : '/images/placeholder.svg'
+---
+
+<article class="card group cursor-pointer" data-slug={slug} data-name={name} data-brand={brand}>
+  <a href={`/products/${slug}`} class="block">
+    <div class="relative overflow-hidden h-56 bg-gray-100">
+      <img
+        src={image || fallback}
+        alt={name}
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        onerror={`this.src='${fallback}'`}
+        loading="lazy"
+      />
+      <div class="absolute top-3 left-3 flex flex-wrap gap-1">
+        {tags.map(tag => (
+          <span class="tag text-xs" style={`background-color: ${accentColor}; color: white;`}>{tag}</span>
+        ))}
+      </div>
+    </div>
+    <div class="p-5">
+      <h3 class="font-bold text-lg mb-0.5" style="font-family: var(--font-heading)">{name}</h3>
+      <p class="text-xs opacity-50 mb-2 font-mono">{variety}</p>
+      <p class="text-sm opacity-70 leading-relaxed line-clamp-2 mb-4">{description}</p>
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-mono opacity-40">Unit: {unit}</span>
+        <span class="text-sm font-semibold" style={`color: ${accentColor}`}>View Details →</span>
+      </div>
+    </div>
+  </a>
+  <div class="px-5 pb-5">
+    <button
+      class="w-full py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 add-to-quote"
+      style={`border-color: ${accentColor}; color: ${accentColor}`}
+      data-slug={slug}
+      data-name={name}
+      data-unit={unit}
+      onmouseover="this.style.backgroundColor=this.dataset.accent; this.style.color='white'"
+      onmouseout="this.style.backgroundColor=''; this.style.color=this.dataset.accent"
+      data-accent={accentColor}
+    >
+      + Add to Quote
+    </button>
+  </div>
+</article>
