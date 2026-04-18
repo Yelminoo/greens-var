@@ -14,9 +14,9 @@ const SUBDOMAIN_MAP: Record<string, string> = {
 //
 // To re-enable subdomain routing: set SUBDOMAIN_ROUTING=true in .env
 // ─────────────────────────────────────────────────────────────────────────────
-const SUBDOMAIN_ROUTING = process.env.SUBDOMAIN_ROUTING === 'true'
+const SUBDOMAIN_ROUTING = process.env['SUBDOMAIN_ROUTING'] === 'true'
 
-const SKIP_REWRITE = ['/api', '/admin', '/_astro', '/images', '/favicon', '/services', '/contact', '/about']
+const SKIP_REWRITE = ['/api', '/admin', '/_astro', '/images', '/favicon', '/services', '/contact', '/about', '/products', '/quote']
 
 function isNgrokHost(host: string): boolean {
   return host.includes('ngrok-free.app') || host.includes('ngrok.io')
