@@ -1,51 +1,54 @@
 #!/bin/bash
-# Run once on a fresh Ubuntu 24.04 DO droplet
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Greens Variegated — DigitalOcean Ubuntu 24.04 setup
+# Run as root on a fresh droplet: bash setup.sh
+# ─────────────────────────────────────────────────────────────────────────────
 set -e
 
-# 1. Node.js 20 LTS
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
+echo "── [1/7] Updating system ─────────────────────────────"
+apt-get update -y && apt-get upgrade -y
 
-# 2. PM2
-sudo npm install -g pm2
+echo "── [2/7] Installing Node.js 22 ──────────────────────"
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+node -v   # should print v22.x
 
-# 3. Nginx
-sudo apt-get install -y nginx
+echo "── [3/7] Installing PM2 & tools ─────────────────────"
+npm install -g pm2
+apt-get install -y nginx git
 
-# 4. Certbot (SSL)
-sudo apt-get install -y certbot python3-certbot-nginx
+echo "── [4/7] Setting up PostgreSQL ──────────────────────"
+apt-get install -y postgresql postgresql-contrib
+systemctl enable postgresql
+systemctl start postgresql
+# Create DB user + database
+sudo -u postgres psql <<SQL
+CREATE USER greensvar WITH PASSWORD 'CHANGE_THIS_PASSWORD';
+CREATE DATABASE greensvar_prod OWNER greensvar;
+SQL
 
-# 5. PostgreSQL
-sudo apt-get install -y postgresql postgresql-contrib
-sudo -u postgres createuser --superuser greensvar
-sudo -u postgres createdb greensvar
-# Set password:  sudo -u postgres psql -c "ALTER USER greensvar PASSWORD 'yourpassword';"
+echo "── [5/7] Creating app directory ─────────────────────"
+mkdir -p /var/www/greensvar
+mkdir -p /var/www/greensvar/storage/quotes   # PDF invoice storage
 
-# 6. Clone repo and install deps
-# git clone https://github.com/your-org/greensvar.git /var/www/greensvar
-# cd /var/www/greensvar && npm install
+echo "── [6/7] Configuring Nginx (no domain, HTTP only) ──"
+cp /var/www/greensvar/deploy/nginx-ip.conf /etc/nginx/sites-available/greensvar
+ln -sf /etc/nginx/sites-available/greensvar /etc/nginx/sites-enabled/greensvar
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
 
-# 7. Copy .env
-# cp .env.example .env && nano .env
+echo "── [7/7] PM2 startup on boot ────────────────────────"
+pm2 startup systemd -u root --hp /root
+# pm2 save  ← run this after starting the app
 
-# 8. Run DB migrations
-# npx drizzle-kit push
-
-# 9. Hash admin password (run this locally, paste hash into .env)
-# node -e "const b=require('bcryptjs'); b.hash('yourpassword',12).then(console.log)"
-
-# 10. Build and start
-# npm run build
-# pm2 start deploy/ecosystem.config.cjs
-# pm2 save && pm2 startup
-
-# 11. Nginx config
-# sudo cp deploy/nginx.conf /etc/nginx/sites-available/greensvar
-# sudo ln -s /etc/nginx/sites-available/greensvar /etc/nginx/sites-enabled/
-# sudo nginx -t && sudo systemctl reload nginx
-
-# 12. SSL (run after DNS is pointed at the droplet)
-# sudo certbot --nginx -d greensvar.com -d www.greensvar.com -d fruithai.greensvar.com -d variegata.greensvar.com
-
-echo "Setup complete. Follow the commented steps to finish deployment."
+echo ""
+echo "✅ System ready. Next steps:"
+echo "   1. cd /var/www/greensvar"
+echo "   2. Upload your code (git clone or scp)"
+echo "   3. cp deploy/.env.production.example .env && nano .env"
+echo "   4. npm install --omit=dev"
+echo "   5. npm run build"
+echo "   6. npm run db:push && npm run db:seed"
+echo "   7. pm2 start deploy/ecosystem.config.cjs"
+echo "   8. pm2 save"
+echo "   9. Visit http://YOUR_DROPLET_IP"
