@@ -12,24 +12,50 @@ const { title, description, brand } = Astro.props
 const { isNgrok } = Astro.locals
 const isQuotePage = Astro.url.pathname === '/quote'
 
+// In subdomain mode (production), brand sites live on subdomains.
+// In path mode (local / IP-only), they live under /<brand>/.
+const IS_SUBDOMAIN = process.env['SUBDOMAIN_ROUTING'] === 'true'
+const origin = Astro.url.origin   // e.g. http://localhost:4321 or https://fruithai.greensvar.com
+
+function brandHome(b: string) {
+  if (IS_SUBDOMAIN) return `https://${b}.greensvar.com`
+  return `${origin}/${b}`
+}
+
 const brandConfig = {
   fruithai: {
-    name:        'FruThai',
-    tagline:     'Tropical Fruits from Thailand',
-    accentColor: 'var(--color-orange-fruit)',
-    homeUrl:     'http://fruithai.greensvar.com',
-    quoteUrl:    '/quote',
+    name:         'FruThai',
+    tagline:      'Premium Tropical Fruits',
+    accentColor:  'var(--color-ft-mid)',
+    darkColor:    'var(--color-ft-dark)',
+    brightColor:  'var(--color-ft-bright)',
+    fontHeading:  'var(--font-heading-fruithai)',
+    fontBody:     'var(--font-body-fruithai)',
+    homeUrl:      brandHome('fruithai'),
+    quoteUrl:     '/quote',
   },
   variegata: {
-    name:        'Variegata',
-    tagline:     'Fresh Vegetables, Naturally Grown',
-    accentColor: 'var(--color-teal-veg)',
-    homeUrl:     'http://variegata.greensvar.com',
-    quoteUrl:    '/quote',
+    name:         'Variegata',
+    tagline:      'Fresh Vegetables, Naturally Grown',
+    accentColor:  'var(--color-teal-veg)',
+    darkColor:    'var(--color-dark)',
+    brightColor:  'var(--color-teal-veg)',
+    fontHeading:  'var(--font-heading)',
+    fontBody:     'var(--font-body)',
+    homeUrl:      brandHome('variegata'),
+    quoteUrl:     '/quote',
   },
 }
 
-const config = brandConfig[brand]
+// Fall back to fruithai if brand is 'main' or unrecognised (e.g. shared pages on main site)
+const resolvedBrand = (brand in brandConfig) ? brand : 'fruithai'
+const config = brandConfig[resolvedBrand as keyof typeof brandConfig]
+
+// In subdomain mode the host carries the brand — plain paths work fine.
+// In path mode we must pass ?_brand= so shared pages know which brand to serve.
+function navUrl(path: string) {
+  return IS_SUBDOMAIN ? path : `${path}?_brand=${resolvedBrand}`
+}
 ---
 
 <!doctype html>
@@ -41,7 +67,11 @@ const config = brandConfig[brand]
   <title>{title} | {config.name}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Main site fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  {resolvedBrand === 'fruithai' && (
+    <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&family=Nunito:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  )}
   <style>
     @keyframes ngrok-pulse {
       0%, 100% { opacity: 1; }
@@ -49,20 +79,23 @@ const config = brandConfig[brand]
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col" style={`--brand: ${config.accentColor}`}>
-  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
+<body class="min-h-screen flex flex-col"
+      data-brand={resolvedBrand}
+      style={`--brand: ${config.accentColor}; --brand-dark: ${config.darkColor}; --brand-bright: ${config.brightColor};`}>
+  <header class="sticky top-0 z-50 backdrop-blur border-b"
+          style="background: rgba(255,255,255,0.95); border-color: #e8f5e8;">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
       <a href={config.homeUrl} class="flex items-center gap-2">
-        <span class="text-2xl font-bold font-heading" style={`color: ${config.accentColor}`}>
+        <span class="text-2xl font-bold" style={`color: ${config.accentColor}; font-family: ${config.fontHeading}`}>
           {config.name}
         </span>
         <span class="text-xs opacity-40 hidden sm:block">by Greens Variegated</span>
       </a>
       <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
-        <a href={config.homeUrl} class="hover:opacity-70 transition-opacity">Home</a>
-        <a href="/products" class="hover:opacity-70 transition-opacity">Products</a>
-        <a href="/services" class="hover:opacity-70 transition-opacity">Services</a>
-        <a href="/contact" class="hover:opacity-70 transition-opacity">Contact</a>
+        <a href={IS_SUBDOMAIN ? 'https://greensvar.com' : '/'} class="hover:opacity-70 transition-opacity">Home</a>
+        <a href={navUrl('/products')} class="hover:opacity-70 transition-opacity">Products</a>
+        <a href={navUrl('/services')} class="hover:opacity-70 transition-opacity">Services</a>
+        <a href={navUrl('/contact')} class="hover:opacity-70 transition-opacity">Contact</a>
       </nav>
       {isNgrok && (
         <span style="display:inline-flex;align-items:center;gap:5px;background:#1C2B1E;color:#A8D635;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;letter-spacing:0.5px;">
@@ -78,9 +111,11 @@ const config = brandConfig[brand]
           🧾 <span id="nav-basket-count">0</span>
         </span>
       ) : (
-        <a href="/quote"
+        <a href={navUrl('/quote')}
            class="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full transition-all hover:scale-105"
-           style={`background-color:${config.accentColor};color:white`}
+           style={resolvedBrand === 'fruithai'
+             ? `background-color:#4fae4f;color:#16381c;font-family:${config.fontBody}`
+             : `background-color:${config.accentColor};color:white`}
            id="nav-basket-link">
           🧾 <span id="nav-basket-count">0</span>
         </a>
@@ -98,14 +133,21 @@ const config = brandConfig[brand]
     <slot />
   </main>
 
-  <footer style="background-color: var(--color-dark);" class="text-white">
+  <footer class="text-white"
+          style={resolvedBrand === 'fruithai'
+            ? 'background-color: #0e2412;'
+            : 'background-color: var(--color-dark);'}>
     <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between gap-6">
       <div>
-        <p class="text-xl font-bold font-heading mb-1" style={`color: ${config.accentColor}`}>{config.name}</p>
-        <p class="text-sm opacity-50">{config.tagline}</p>
+        <p class="text-xl font-bold mb-1"
+           style={`color: ${config.accentColor}; font-family: ${config.fontHeading}`}>{config.name}</p>
+        <p class="text-sm opacity-50" style={`font-family: ${config.fontBody}`}>{config.tagline}</p>
+        {resolvedBrand === 'fruithai' && (
+          <p class="font-bebas text-xs mt-2" style="color: rgba(79,174,79,0.5); letter-spacing: 2px;">SINCE 2018</p>
+        )}
       </div>
       <div class="text-sm opacity-50 flex items-end">
-        <a href="http://greensvar.com" class="hover:opacity-100 transition-opacity">← Back to Greens Variegated</a>
+        <a href={IS_SUBDOMAIN ? 'https://greensvar.com' : `${origin}/`} class="hover:opacity-100 transition-opacity">← Back to Greens Variegated</a>
       </div>
     </div>
   </footer>

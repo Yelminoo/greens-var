@@ -1,19 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand colours */
+  /* Greens Variegated main colours */
   --color-green-primary:   #2D7D46;
   --color-green-fresh:     #5CB85C;
   --color-lime-accent:     #A8D635;
   --color-cream:           #FFFDF0;
-  --color-orange-fruit:    #F4821F;
+  --color-orange-fruit:    #F4821F;   /* kept for fallback only */
   --color-teal-veg:        #1A9E8F;
   --color-dark:            #1C2B1E;
 
+  /* ── FruThai Brand Colours (from Brand Guideline) ── */
+  --color-ft-dark:         #16381c;  /* deep forest green — dark BG / text */
+  --color-ft-mid:          #236a37;  /* primary brand green — buttons, nav */
+  --color-ft-bright:       #4fae4f;  /* fresh accent — hover, highlights */
+  --color-ft-light:        #e8f7e8;  /* tint — light section backgrounds */
+
   /* Typography */
-  --font-heading: 'Lora', Georgia, serif;
-  --font-body:    'DM Sans', system-ui, sans-serif;
-  --font-mono:    'DM Mono', monospace;
+  --font-heading:          'Lora', Georgia, serif;        /* main site */
+  --font-heading-fruithai: 'Poetsen One', Georgia, serif;  /* FruThai headings (brand guideline) */
+  --font-body:             'DM Sans', system-ui, sans-serif;
+  --font-body-fruithai:    'Nunito', 'DM Sans', system-ui, sans-serif; /* closest to MADE Tommy Soft */
+  --font-display-fruithai: 'Bebas Neue', sans-serif;      /* secondary display font */
+  --font-mono:             'DM Mono', monospace;
 }
 
 @layer base {
@@ -31,6 +40,28 @@
   ::selection {
     background-color: var(--color-lime-accent);
     color: var(--color-dark);
+  }
+
+  /* ── FruThai brand fonts ─────────────────────────────────── */
+  /* Applied via data-brand="fruithai" on <body> so they       */
+  /* always override Tailwind base styles with no variable     */
+  /* chain ambiguity.                                           */
+  body[data-brand="fruithai"] {
+    font-family: 'Nunito', 'DM Sans', system-ui, sans-serif;
+  }
+
+  body[data-brand="fruithai"] h1,
+  body[data-brand="fruithai"] h2,
+  body[data-brand="fruithai"] h3,
+  body[data-brand="fruithai"] h4,
+  body[data-brand="fruithai"] h5,
+  body[data-brand="fruithai"] h6 {
+    font-family: 'Poetsen One', Georgia, serif;
+  }
+
+  body[data-brand="fruithai"] .font-display,
+  body[data-brand="fruithai"] .font-bebas {
+    font-family: 'Bebas Neue', sans-serif;
   }
 }
 

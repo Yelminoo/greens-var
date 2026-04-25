@@ -14,7 +14,7 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
       <h2 class="text-xl font-semibold mb-4">Selected Products</h2>
       <div id="basket-empty" class="hidden text-center py-12 rounded-2xl border-2 border-dashed border-gray-200">
         <p class="opacity-40 mb-4">Your quote basket is empty.</p>
-        <a href="/" class="btn-primary text-sm" style={`background-color: ${accentColor}`}>Browse Products</a>
+        <a href={`/products?_brand=${brand}`} class="btn-primary text-sm" style={`background-color: ${accentColor}`}>Browse Products</a>
       </div>
       <div id="basket-items" class="space-y-3"></div>
     </div>
@@ -74,7 +74,7 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
 </BrandLayout>
 
 <script>
-  import { getBasket, updateQuantity, removeFromBasket, clearBasket } from '../lib/quoteBasket'
+  import { getBasket, updateQuantity, updateRequestedKg, removeFromBasket, clearBasket } from '../lib/quoteBasket'
 
   const accentColor = document.body.style.getPropertyValue('--brand') || 'var(--color-orange-fruit)'
 
@@ -90,19 +90,29 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
     }
     emptyEl.classList.add('hidden')
     itemsEl.innerHTML = basket.map(item => `
-      <div class="flex items-center gap-4 bg-white rounded-xl p-4 border border-gray-100">
-        <div class="flex-1">
-          <p class="font-semibold">${item.name}</p>
-          <p class="text-xs opacity-50 font-mono">${item.unit}</p>
+      <div class="bg-white rounded-xl p-4 border border-gray-100 space-y-3">
+        <div class="flex items-center gap-4">
+          <div class="flex-1">
+            <p class="font-semibold">${item.name}</p>
+            <p class="text-xs opacity-50 font-mono">${item.unit ?? ''}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs opacity-50">Qty${item.unit ? ` (${item.unit})` : ''}</label>
+            <input type="number" min="1" value="${item.quantity}"
+                   class="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center"
+                   onchange="window.__updateQty('${item.slug}', +this.value)" />
+          </div>
+          <button onclick="window.__removeItem('${item.slug}')"
+                  class="text-red-400 hover:text-red-600 text-sm px-2 transition-colors">✕</button>
         </div>
-        <div class="flex items-center gap-2">
-          <label class="text-xs opacity-50">Qty</label>
-          <input type="number" min="1" value="${item.quantity}"
-                 class="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center"
-                 onchange="window.__updateQty('${item.slug}', +this.value)" />
+        <div class="flex items-center gap-3 pt-1 border-t border-gray-50">
+          <label class="text-xs font-medium opacity-60 whitespace-nowrap">Quantity in KG</label>
+          <input type="number" min="0" step="0.01" placeholder="e.g. 500"
+                 value="${item.requestedKg ?? ''}"
+                 class="w-28 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center"
+                 onchange="window.__updateKg('${item.slug}', this.value ? +this.value : null)" />
+          <span class="text-xs opacity-40">kg  — optional, helps us prepare an accurate quote</span>
         </div>
-        <button onclick="window.__removeItem('${item.slug}')"
-                class="text-red-400 hover:text-red-600 text-sm px-2 transition-colors">✕</button>
       </div>
     `).join('')
   }
@@ -110,6 +120,9 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
   ;(window as any).__updateQty = (slug: string, qty: number) => {
     updateQuantity(slug, qty)
     renderBasket()
+  }
+  ;(window as any).__updateKg = (slug: string, kg: number | null) => {
+    updateRequestedKg(slug, kg)
   }
   ;(window as any).__removeItem = (slug: string) => {
     removeFromBasket(slug)

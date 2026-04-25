@@ -3,13 +3,14 @@ import BrandLayout from '../../layouts/BrandLayout.astro'
 import { getProductBySlug } from '../../db/products'
 
 const { slug } = Astro.params
-const brand = Astro.locals.brand as 'fruithai' | 'variegata'
 
 const product = await getProductBySlug(slug!)
 
 if (!product) {
   return Astro.redirect('/')
 }
+
+const brand = product.brand as 'fruithai' | 'variegata'
 
 const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--color-orange-fruit)'
 const fallback    = brand === 'variegata' ? '/images/variegata/placeholder.svg' : '/images/fruithai/placeholder.svg'

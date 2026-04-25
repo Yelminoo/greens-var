@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greens Variegated — Hosting & Email Infrastructure Guide</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1C2B1E;
+      background: #f7f9f7;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 60px 64px;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      background: linear-gradient(135deg, #1C2B1E 0%, #2D7D46 100%);
+      color: white;
+      padding: 64px;
+      border-radius: 16px;
+      margin-bottom: 48px;
+    }
+    .cover .logo {
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 24px;
+    }
+    .cover h1 {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .cover .subtitle {
+      font-size: 16px;
+      opacity: 0.75;
+      margin-bottom: 32px;
+    }
+    .cover .meta {
+      display: flex;
+      gap: 32px;
+      font-size: 13px;
+      opacity: 0.6;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 24px;
+    }
+
+    /* ── Typography ── */
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1C2B1E;
+      margin: 48px 0 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8f0e9;
+    }
+    h2:first-of-type { margin-top: 0; }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2D7D46;
+      margin: 28px 0 10px;
+    }
+    h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1C2B1E;
+      margin: 20px 0 8px;
+    }
+    p { margin-bottom: 12px; color: #333; }
+
+    /* ── Recommendation Box ── */
+    .rec-box {
+      background: #f0faf3;
+      border: 2px solid #2D7D46;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin: 20px 0 32px;
+    }
+    .rec-box .rec-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #2D7D46;
+      margin-bottom: 8px;
+    }
+    .rec-box p { margin: 0; font-size: 15px; color: #1C2B1E; }
+
+    /* ── Warning Box ── */
+    .warn-box {
+      background: #fff8f0;
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .warn-box p { margin: 0; color: #92400e; }
+
+    /* ── Info Box ── */
+    .info-box {
+      background: #eff6ff;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .info-box p { margin: 0; color: #1e3a8a; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 13px;
+    }
+    thead tr { background: #1C2B1E; color: white; }
+    thead th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+    tbody tr:nth-child(even) { background: #f7f9f7; }
+    tbody tr:hover { background: #edf7f0; }
+    td { padding: 10px 14px; border-bottom: 1px solid #eee; vertical-align: top; }
+    td strong { color: #1C2B1E; }
+
+    .highlight-row td { background: #f0faf3 !important; font-weight: 600; }
+    .highlight-row td:first-child::before {
+      content: '★ ';
+      color: #2D7D46;
+    }
+
+    /* ── Check / Cross ── */
+    .yes { color: #2D7D46; font-weight: 700; }
+    .no  { color: #dc2626; font-weight: 700; }
+    .maybe { color: #f59e0b; font-weight: 700; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-green  { background: #dcfce7; color: #166534; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+
+    /* ── Cost Summary Card ── */
+    .cost-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .cost-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .cost-card h4 { margin: 0 0 12px; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
+    .cost-card .amount { font-size: 28px; font-weight: 700; color: #2D7D46; }
+    .cost-card .amount span { font-size: 14px; font-weight: 400; color: #6b7280; }
+    .cost-card p { margin: 6px 0 0; font-size: 12px; color: #9ca3af; }
+
+    /* ── Steps ── */
+    .steps { counter-reset: step; margin: 16px 0; }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      counter-increment: step;
+      min-width: 28px;
+      height: 28px;
+      background: #2D7D46;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body { flex: 1; }
+    .step-body strong { display: block; margin-bottom: 4px; }
+
+    /* ── Code ── */
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #0f172a;
+    }
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 12px 0 20px;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 2px solid #e8f0e9;
+      margin: 40px 0;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: #f7f9f7;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h3 { margin: 0 0 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; font-size: 13px; }
+    .toc a { color: #2D7D46; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Stack Diagram ── */
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0 24px;
+    }
+    .stack-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .stack-label {
+      width: 140px;
+      font-size: 11px;
+      color: #6b7280;
+      text-align: right;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stack-item {
+      flex: 1;
+      background: #1C2B1E;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .stack-item.green { background: #2D7D46; }
+    .stack-item.blue  { background: #1e40af; }
+    .stack-item.amber { background: #b45309; }
+
+    .stack-cost {
+      font-size: 12px;
+      color: #6b7280;
+      width: 70px;
+      text-align: right;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 2px solid #e8f0e9;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { background: white; }
+      .page { padding: 40px; }
+      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      table thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .rec-box, .warn-box, .info-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .stack-item { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      h2 { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="logo">Greens Variegated · Infrastructure</div>
+    <h1>Hosting &amp; Email<br>Infrastructure Guide</h1>
+    <div class="subtitle">Comparing hosting providers, email options, and the recommended setup for the Greens Variegated multi-brand platform.</div>
+    <div class="meta">
+      <span>📅 April 2025</span>
+      <span>🌐 greensvar.com</span>
+      <span>⚙️ Astro SSR · Node.js · PostgreSQL</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#summary">Executive Summary &amp; Recommendation</a></li>
+      <li><a href="#your-stack">What Your Site Requires</a></li>
+      <li><a href="#hosting">Hosting Options Compared</a></li>
+      <li><a href="#email">Email Options Compared</a></li>
+      <li><a href="#namecheap-email">Namecheap Private Email — Full Detail</a></li>
+      <li><a href="#setup">Setup Guide</a></li>
+      <li><a href="#cost">Total Cost Summary</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. Summary -->
+  <h2 id="summary">1. Executive Summary &amp; Recommendation</h2>
+
+  <div class="rec-box">
+    <div class="rec-label">✅ Recommended Stack</div>
+    <p><strong>Hosting:</strong> DigitalOcean VPS ($6–12/mo) — already set up, required for Node.js/Astro SSR.<br>
+    <strong>Email Inbox:</strong> Namecheap Private Email Starter ($0.99/mo) — real inbox at info@greensvar.com.<br>
+    <strong>Email Sending:</strong> Resend free plan (3,000 emails/mo free) — high deliverability transactional emails.<br>
+    <strong>Total: ~$7–13/mo</strong> for a fully professional setup.</p>
+  </div>
+
+  <p>Shared hosting providers like GoDaddy, Bluehost, and Namecheap bundle email with their plans, but <strong>your site cannot run on shared hosting</strong> — it requires a Node.js server process, PostgreSQL, and custom subdomain routing. These features are only available on a VPS like DigitalOcean.</p>
+
+  <p>The smart approach is to <strong>split the two concerns</strong>: keep DigitalOcean for hosting the application, and add Namecheap's standalone email hosting ($0.99/mo) for a real professional inbox. This gives you the best of both worlds at a minimal cost.</p>
+
+  <hr />
+
+  <!-- 2. Your Stack -->
+  <h2 id="your-stack">2. What Your Site Requires</h2>
+  <p>Before comparing providers, it's important to understand what the Greens Variegated platform needs from a host:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Requirement</th>
+        <th>Why It's Needed</th>
+        <th>Shared Hosting</th>
+        <th>VPS (DigitalOcean)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Node.js runtime</strong></td>
+        <td>Astro SSR runs as a Node process</td>
+        <td class="no">✗ No</td>
+        <td class="yes">✓ Yes</td>
+      </tr>
+      <tr>
+        <td><strong>PM2 process manager</strong></td>
+        <td>Keeps the server running, handles restarts</td>
+        <td class="no">✗ No</td>
+        <td class="yes">✓ Yes</td>
+      </tr>
+      <tr>
+        <td><strong>PostgreSQL database</strong></td>
+        <td>Stores products, quotes, orders</td>
+        <td class="no">✗ MySQL only</td>
+        <td class="yes">✓ Yes</td>
+      </tr>
+      <tr>
+        <td><strong>Nginx configuration</strong></td>
+        <td>Subdomain routing, SSL, reverse proxy</td>
+        <td class="no">✗ No SSH access</td>
+        <td class="yes">✓ Full control</td>
+      </tr>
+      <tr>
+        <td><strong>Custom subdomain routing</strong></td>
+        <td>fruithai.greensvar.com / variegata.greensvar.com</td>
+        <td class="no">✗ Very limited</td>
+        <td class="yes">✓ Yes</td>
+      </tr>
+      <tr>
+        <td><strong>SSL (Certbot / Let's Encrypt)</strong></td>
+        <td>HTTPS for all subdomains</td>
+        <td class="maybe">△ Auto-included</td>
+        <td class="yes">✓ Yes (free)</td>
+      </tr>
+      <tr>
+        <td><strong>File system access</strong></td>
+        <td>Product image uploads stored on disk</td>
+        <td class="maybe">△ Limited</td>
+        <td class="yes">✓ Yes</td>
+      </tr>
+      <tr>
+        <td><strong>Environment variables</strong></td>
+        <td>API keys, secrets, config per environment</td>
+        <td class="no">✗ No</td>
+        <td class="yes">✓ Yes</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="warn-box">
+    <p><strong>⚠️ Important:</strong> Moving to shared hosting would require rebuilding the entire platform in PHP (e.g. WordPress). This is not a viable option — the project must stay on a VPS.</p>
+  </div>
+
+  <hr />
+
+  <!-- 3. Hosting -->
+  <h2 id="hosting">3. Hosting Options Compared</h2>
+
+  <h3>3A. Shared Hosting Providers (Not Suitable)</h3>
+  <p>These are listed for reference only. They are <strong>not compatible</strong> with the current tech stack.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Provider</th>
+        <th>Intro Price</th>
+        <th>Renewal Price</th>
+        <th>Email Included</th>
+        <th>Node.js</th>
+        <th>PostgreSQL</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>GoDaddy</strong> (Economy)</td>
+        <td>$5–8/mo</td>
+        <td>$10–15/mo</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ No</td>
+        <td class="no">✗ No</td>
+      </tr>
+      <tr>
+        <td><strong>Bluehost</strong> (Basic)</td>
+        <td>$3–5/mo</td>
+        <td>$10–14/mo</td>
+        <td class="yes">✓ Yes (5 accounts)</td>
+        <td class="no">✗ No</td>
+        <td class="no">✗ No</td>
+      </tr>
+      <tr>
+        <td><strong>Namecheap</strong> (Stellar)</td>
+        <td>$1.98/mo</td>
+        <td>$3.88/mo</td>
+        <td class="yes">✓ Yes (unlimited)</td>
+        <td class="no">✗ No</td>
+        <td class="no">✗ No</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box">
+    <p><strong>ℹ️ Why shared hosting seems cheaper:</strong> Intro prices are heavily discounted for the first term (12–24 months). Renewal prices are 2–3× higher. More importantly, none support Node.js or PostgreSQL, so they cannot host the Greens Variegated platform.</p>
+  </div>
+
+  <h3>3B. VPS Providers (Required)</h3>
+  <p>These give you a full Linux server where you control everything. Your site is <strong>already running</strong> on DigitalOcean.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Provider</th>
+        <th>Entry Plan</th>
+        <th>RAM / CPU / SSD</th>
+        <th>Email Included</th>
+        <th>Best For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="highlight-row">
+        <td><strong>DigitalOcean</strong> ← Current</td>
+        <td>$6/mo</td>
+        <td>1 GB / 1 vCPU / 25 GB</td>
+        <td class="no">✗ No</td>
+        <td>Already configured, great docs &amp; community</td>
+      </tr>
+      <tr>
+        <td><strong>Hetzner</strong></td>
+        <td>€3.79/mo (~$4/mo)</td>
+        <td>2 GB / 2 vCPU / 40 GB</td>
+        <td class="no">✗ No</td>
+        <td>Best specs per dollar, EU-based</td>
+      </tr>
+      <tr>
+        <td><strong>Vultr</strong></td>
+        <td>$6/mo</td>
+        <td>1 GB / 1 vCPU / 25 GB</td>
+        <td class="no">✗ No</td>
+        <td>Similar to DigitalOcean</td>
+      </tr>
+      <tr>
+        <td><strong>Linode (Akamai)</strong></td>
+        <td>$5/mo</td>
+        <td>1 GB / 1 vCPU / 25 GB</td>
+        <td class="no">✗ No</td>
+        <td>Long-established, reliable</td>
+      </tr>
+      <tr>
+        <td><strong>Railway</strong></td>
+        <td>~$5/mo</td>
+        <td>Variable</td>
+        <td class="no">✗ No</td>
+        <td>Easiest deployment, includes managed PostgreSQL</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Verdict:</strong> Stay on DigitalOcean. The server is already configured with Nginx, SSL, PM2, PostgreSQL, and subdomain routing. Migrating to save $1–2/mo is not worth the effort. If cost becomes a concern in the future, <strong>Hetzner</strong> offers better specs at a lower price with a similar setup process.</p>
+
+  <hr />
+
+  <!-- 4. Email -->
+  <h2 id="email">4. Email Options Compared</h2>
+
+  <p>None of the VPS providers include email hosting. These are your options for managing <code>@greensvar.com</code> emails:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Option</th>
+        <th>Cost</th>
+        <th>Real Inbox</th>
+        <th>Send from Domain</th>
+        <th>Reply from Domain</th>
+        <th>Setup Complexity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Free Stack</strong><br><small>Cloudflare + ImprovMX + Resend</small></td>
+        <td><strong>$0/mo</strong></td>
+        <td class="no">✗ Forwarding only</td>
+        <td class="yes">✓ Via Resend</td>
+        <td class="maybe">△ Gmail Send As</td>
+        <td>Medium</td>
+      </tr>
+      <tr class="highlight-row">
+        <td><strong>Namecheap Private Email</strong><br><small>Starter Plan</small></td>
+        <td><strong>$0.99/mo</strong></td>
+        <td class="yes">✓ Real inbox</td>
+        <td class="yes">✓ SMTP or Resend</td>
+        <td class="yes">✓ Native</td>
+        <td>Easy</td>
+      </tr>
+      <tr>
+        <td><strong>Google Workspace</strong></td>
+        <td>$6/user/mo</td>
+        <td class="yes">✓ Real inbox</td>
+        <td class="yes">✓ Yes</td>
+        <td class="yes">✓ Yes</td>
+        <td>Easy</td>
+      </tr>
+      <tr>
+        <td><strong>Microsoft 365 Business</strong></td>
+        <td>$6/user/mo</td>
+        <td class="yes">✓ Real inbox</td>
+        <td class="yes">✓ Yes</td>
+        <td class="yes">✓ Yes</td>
+        <td>Medium</td>
+      </tr>
+      <tr>
+        <td><strong>Zoho Mail Free</strong></td>
+        <td>$0/mo</td>
+        <td class="yes">✓ Real inbox</td>
+        <td class="yes">✓ Yes</td>
+        <td class="yes">✓ Yes</td>
+        <td>Medium</td>
+      </tr>
+      <tr>
+        <td><strong>GoDaddy Email</strong></td>
+        <td>$2–6/user/mo</td>
+        <td class="yes">✓ Real inbox</td>
+        <td class="yes">✓ Yes</td>
+        <td class="yes">✓ Yes</td>
+        <td>Easy</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Why Namecheap Private Email wins:</strong> At $0.99/mo it gives you a real inbox (not just forwarding), IMAP/SMTP access, works with Gmail/Outlook/Apple Mail, includes calendar &amp; contacts, and has a 30-day free trial. Google Workspace is excellent but costs 6× more for a small business that only needs one mailbox.</p>
+
+  <hr />
+
+  <!-- 5. Namecheap Email Detail -->
+  <h2 id="namecheap-email">5. Namecheap Private Email — Full Detail</h2>
+
+  <h3>Plans &amp; Pricing</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Plan</th>
+        <th>Monthly</th>
+        <th>Annual</th>
+        <th>Mailboxes</th>
+        <th>Storage</th>
+        <th>Aliases</th>
+        <th>Extras</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="highlight-row">
+        <td><strong>Starter</strong></td>
+        <td>$0.99/mo</td>
+        <td>$14.88/yr</td>
+        <td>1</td>
+        <td>5 GB</td>
+        <td>10 per mailbox</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Pro</strong></td>
+        <td>$2.50/mo</td>
+        <td>$41.88/yr</td>
+        <td>3</td>
+        <td>30 GB</td>
+        <td>Unlimited</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Ultimate</strong></td>
+        <td>$3.99/mo</td>
+        <td>$71.88/yr</td>
+        <td>5</td>
+        <td>75 GB</td>
+        <td>Unlimited</td>
+        <td>Docs, Sheets, Presentations</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>What's Included in Every Plan</h3>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Included</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Real mailbox at your domain (e.g. info@greensvar.com)</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Webmail access (browser)</td><td class="yes">✓ Yes — privateemail.com</td></tr>
+      <tr><td>IMAP / POP3 (connect to Gmail, Outlook, Apple Mail)</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>SMTP (send from any mail client)</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>iOS &amp; Android mobile apps</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Calendar &amp; Contacts sync</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Spam &amp; virus filtering</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Email aliases (additional addresses to same inbox)</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Auto-responders</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Email forwarding rules</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>30-day free trial</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>SSL/TLS encrypted connections</td><td class="yes">✓ Yes</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Aliases — One Inbox, Many Addresses</h3>
+  <p>With the Starter plan (1 mailbox), you can create <strong>10 aliases</strong> that all deliver to the same inbox. This means you get:</p>
+  <table>
+    <thead><tr><th>Alias Address</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>info@greensvar.com</code></td><td>Main contact, quote notifications</td></tr>
+      <tr><td><code>orders@greensvar.com</code></td><td>Order-related emails</td></tr>
+      <tr><td><code>support@greensvar.com</code></td><td>Customer support</td></tr>
+      <tr><td><code>noreply@greensvar.com</code></td><td>Automated system emails</td></tr>
+      <tr><td><code>fruithai@greensvar.com</code></td><td>FruThai brand inquiries</td></tr>
+      <tr><td><code>variegata@greensvar.com</code></td><td>Variegata brand inquiries</td></tr>
+    </tbody>
+  </table>
+  <p>All of the above land in one inbox — no extra cost.</p>
+
+  <hr />
+
+  <!-- 6. Setup -->
+  <h2 id="setup">6. Setup Guide</h2>
+
+  <h3>Step 1 — Purchase Namecheap Private Email</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Go to namecheap.com/hosting/email/</strong>
+        Click <em>Start Free Trial</em> on the Starter plan.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Enter your domain:</strong> <code>greensvar.com</code><br>
+        (You already own this domain — you're just adding email hosting to it.)
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Complete checkout.</strong> No payment during the 30-day trial.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>In Namecheap dashboard → Private Email → Manage</strong><br>
+        Create your mailbox: <code>info@greensvar.com</code> with a strong password.
+      </div>
+    </div>
+  </div>
+
+  <h3>Step 2 — Add DNS Records in Cloudflare</h3>
+  <p>Log in to Cloudflare → select <code>greensvar.com</code> → DNS → Add these records:</p>
+
+  <div class="warn-box">
+    <p><strong>⚠️ Before adding these records:</strong> If you currently have Cloudflare Email Routing active (MX records pointing to <code>route1.mx.cloudflare.net</code>), delete those MX records first. You cannot run two sets of MX records simultaneously.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Name</th><th>Value / Content</th><th>Priority</th><th>Proxy</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>MX</td><td><code>@</code></td><td><code>mx1.privateemail.com</code></td><td>10</td><td>DNS only</td></tr>
+      <tr><td>MX</td><td><code>@</code></td><td><code>mx2.privateemail.com</code></td><td>10</td><td>DNS only</td></tr>
+      <tr><td>TXT</td><td><code>@</code></td><td><code>v=spf1 include:spf.privateemail.com ~all</code></td><td>—</td><td>DNS only</td></tr>
+      <tr><td>CNAME</td><td><code>mail</code></td><td><code>privateemail.com</code></td><td>—</td><td>DNS only</td></tr>
+    </tbody>
+  </table>
+
+  <p>DNS changes propagate in <strong>15 minutes – 2 hours</strong>. After that, emails sent to <code>info@greensvar.com</code> will land in your new Namecheap inbox.</p>
+
+  <h3>Step 3 — Access Your Inbox</h3>
+
+  <h4>Option A: Webmail</h4>
+  <p>Visit <strong>privateemail.com</strong> → log in with <code>info@greensvar.com</code> and your mailbox password.</p>
+
+  <h4>Option B: Connect to Gmail (Recommended)</h4>
+  <p>Add as a second account in Gmail so you read and reply in one familiar place:</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Gmail → Settings (⚙) → See all settings → Accounts and Import</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Check mail from other accounts → Add a mail account</strong><br>
+        Email: <code>info@greensvar.com</code>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>IMAP settings:</strong><br>
+        Server: <code>mail.privateemail.com</code> &nbsp;|&nbsp; Port: <code>993</code> &nbsp;|&nbsp; SSL: ✓
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Also add Send As</strong> (same Settings page) so you can send as <code>info@greensvar.com</code>:<br>
+        SMTP server: <code>mail.privateemail.com</code> &nbsp;|&nbsp; Port: <code>465</code> &nbsp;|&nbsp; SSL: ✓
+      </div>
+    </div>
+  </div>
+
+  <h3>Step 4 — How Email Flows in the Application</h3>
+
+  <p>The application sends emails via <strong>Resend</strong> (high deliverability transactional email service). Namecheap is your inbox. They work together:</p>
+
+  <div class="stack">
+    <div class="stack-row">
+      <div class="stack-label">Customer submits quote</div>
+      <div class="stack-item green">Greens Variegated Website</div>
+      <div class="stack-cost"></div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-label">Sends confirmation to customer</div>
+      <div class="stack-item blue">Resend API (from: info@greensvar.com)</div>
+      <div class="stack-cost">Free</div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-label">Sends alert to you</div>
+      <div class="stack-item blue">Resend API → info@greensvar.com</div>
+      <div class="stack-cost">Free</div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-label">You receive alert</div>
+      <div class="stack-item">Namecheap inbox ← real mailbox</div>
+      <div class="stack-cost">$0.99/mo</div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-label">You reply to customer</div>
+      <div class="stack-item amber">Gmail (Send As info@greensvar.com via Namecheap SMTP)</div>
+      <div class="stack-cost">Free</div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-label">Customer hits Reply</div>
+      <div class="stack-item">Reply goes to info@greensvar.com ← you</div>
+      <div class="stack-cost"></div>
+    </div>
+  </div>
+
+  <h3>Step 5 — Environment Variables (No Code Change Needed)</h3>
+  <p>The application already uses Resend for sending — no changes needed. The Namecheap inbox is purely for <em>receiving</em>. Your current <code>.env</code> values are already correct:</p>
+
+  <pre><code># Sending — via Resend (already configured)
+RESEND_API_KEY=re_xxxxxxxxxxxxx
+QUOTE_FROM_EMAIL=info@greensvar.com
+QUOTE_FROM_NAME=Greens Variegated
+QUOTE_TO_EMAIL=info@greensvar.com      # ← change to this after inbox is live
+REPLY_TO_EMAIL=info@greensvar.com</code></pre>
+
+  <hr />
+
+  <!-- 7. Cost -->
+  <h2 id="cost">7. Total Cost Summary</h2>
+
+  <div class="cost-grid">
+    <div class="cost-card">
+      <h4>Monthly Total</h4>
+      <div class="amount">$7–13 <span>/ month</span></div>
+      <p>DigitalOcean + Namecheap Email</p>
+    </div>
+    <div class="cost-card">
+      <h4>Annual Total</h4>
+      <div class="amount">$84–156 <span>/ year</span></div>
+      <p>Full professional infrastructure</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Service</th><th>Purpose</th><th>Cost</th><th>Plan</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>DigitalOcean</strong></td>
+        <td>Application hosting (Node.js, PostgreSQL, Nginx)</td>
+        <td>$6–12/mo</td>
+        <td>Basic Droplet (1–2 GB RAM)</td>
+      </tr>
+      <tr>
+        <td><strong>Cloudflare</strong></td>
+        <td>DNS, CDN, DDoS protection</td>
+        <td><span class="badge badge-green">FREE</span></td>
+        <td>Free plan</td>
+      </tr>
+      <tr>
+        <td><strong>Resend</strong></td>
+        <td>Transactional email sending (quotes, confirmations)</td>
+        <td><span class="badge badge-green">FREE</span></td>
+        <td>3,000 emails/mo free</td>
+      </tr>
+      <tr class="highlight-row">
+        <td><strong>Namecheap Private Email</strong></td>
+        <td>Real inbox at info@greensvar.com</td>
+        <td>$0.99/mo</td>
+        <td>Starter (1 mailbox, 5 GB)</td>
+      </tr>
+      <tr>
+        <td><strong>Let's Encrypt (Certbot)</strong></td>
+        <td>SSL certificates for all subdomains</td>
+        <td><span class="badge badge-green">FREE</span></td>
+        <td>Auto-renewing</td>
+      </tr>
+      <tr>
+        <td><strong>Domain (greensvar.com)</strong></td>
+        <td>Domain registration</td>
+        <td>~$1/mo (~$12/yr)</td>
+        <td>Annual renewal</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rec-box">
+    <div class="rec-label">💡 vs. Shared Hosting Comparison</div>
+    <p>A Bluehost or GoDaddy shared plan at $3–8/mo appears cheaper, but <strong>cannot run your application</strong>. You'd need to rebuild the entire platform in PHP/WordPress to use it. The DigitalOcean + Namecheap combination at $7–13/mo gives you a production-grade setup that actually works with your existing code.</p>
+  </div>
+
+  <hr />
+
+  <h2>Quick Reference — IMAP/SMTP Settings</h2>
+
+  <table>
+    <thead><tr><th>Setting</th><th>Incoming (IMAP)</th><th>Outgoing (SMTP)</th></tr></thead>
+    <tbody>
+      <tr><td>Server</td><td><code>mail.privateemail.com</code></td><td><code>mail.privateemail.com</code></td></tr>
+      <tr><td>Port</td><td><code>993</code></td><td><code>465</code></td></tr>
+      <tr><td>Encryption</td><td>SSL/TLS</td><td>SSL/TLS</td></tr>
+      <tr><td>Username</td><td><code>info@greensvar.com</code></td><td><code>info@greensvar.com</code></td></tr>
+      <tr><td>Password</td><td>Your mailbox password</td><td>Your mailbox password</td></tr>
+    </tbody>
+  </table>
+
+  <table>
+    <thead><tr><th>Access Method</th><th>URL / App</th></tr></thead>
+    <tbody>
+      <tr><td>Webmail</td><td><a href="https://privateemail.com">https://privateemail.com</a></td></tr>
+      <tr><td>iOS / Android App</td><td>Search "Namecheap Private Email" in App Store / Play Store</td></tr>
+      <tr><td>Gmail integration</td><td>Gmail Settings → Accounts and Import → Add mail account</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Greens Variegated — Infrastructure Guide</span>
+    <span>April 2025 · greensvar.com</span>
+    <span>To save as PDF: File → Print → Save as PDF</span>
+  </div>
+
+</div>
+</body>
+</html>

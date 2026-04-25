@@ -5,62 +5,131 @@ import ProductCard from '../../components/shared/ProductCard.astro'
 import { getProductsByBrand } from '../../db/products'
 
 const fruithaiProducts = await getProductsByBrand('fruithai')
-const accentColor = 'var(--color-orange-fruit)'
 const IS_DEV = import.meta.env.DEV
 const dbNotReady = IS_DEV && fruithaiProducts.length === 0
 ---
 
-<BrandLayout title="Tropical Fruits from Thailand" brand="fruithai">
+<BrandLayout title="Premium Tropical Fruits from Thailand" brand="fruithai">
 
   {dbNotReady && (
-    <div style="background:#1C2B1E;border-bottom:3px solid #F4821F;padding:16px 24px;font-family:monospace;font-size:13px;color:white;">
-      <strong style="color:#F4821F;">⚠️ DEV — Database not set up yet.</strong>
+    <div style="background:#16381c;border-bottom:3px solid #4fae4f;padding:16px 24px;font-family:monospace;font-size:13px;color:white;">
+      <strong style="color:#4fae4f;">⚠️ DEV — Database not set up yet.</strong>
       <span style="opacity:0.6;margin:0 12px">Products table is empty or missing. Run in terminal:</span>
-      <code style="background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:6px;color:#A8D635">
+      <code style="background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:6px;color:#4fae4f">
         npm run db:push &amp;&amp; npm run db:seed
       </code>
     </div>
   )}
 
-  <!-- Hero Banner -->
-  <section class="relative min-h-[70vh] flex items-end overflow-hidden" style="background-color: #1a0f00;">
-    <div class="absolute inset-0 opacity-50"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-    <!-- Decorative circle -->
-    <div class="absolute top-12 right-12 w-64 h-64 rounded-full opacity-20 blur-2xl"
-         style="background-color: var(--color-orange-fruit)"></div>
+  <!-- ── Hero ── light background, dark green text, green accent panel -->
+  <section class="relative overflow-hidden" style="background: white; min-height: 82vh;">
 
-    <div class="relative max-w-7xl mx-auto px-6 pb-20 w-full">
-      <span class="tag mb-4 inline-block" style="background-color: var(--color-orange-fruit); color: white;">
-        Thailand's Finest
-      </span>
-      <h1 class="text-5xl md:text-6xl font-bold text-white mb-4" style="font-family: var(--font-heading)">
-        Tropical Fruits,<br />Straight from the Source
-      </h1>
-      <p class="text-white/60 max-w-lg text-lg mb-8">
-        Premium export-grade tropical fruits sourced directly from certified Thai growers. Consistent quality, reliable volumes, honest pricing.
+    <!-- Right accent panel -->
+    <div class="absolute top-0 right-0 h-full w-2/5 hidden lg:block"
+         style="background: linear-gradient(160deg, #4fae4f 0%, #236a37 60%, #16381c 100%); clip-path: polygon(12% 0, 100% 0, 100% 100%, 0% 100%);"></div>
+
+    <!-- Watermelon-line pattern on the green panel -->
+    <div class="absolute top-0 right-0 h-full w-2/5 hidden lg:block opacity-10"
+         style="clip-path: polygon(12% 0, 100% 0, 100% 100%, 0% 100%);
+                background: repeating-conic-gradient(from 0deg, transparent 0deg, transparent 8deg, white 9deg, transparent 10deg);"></div>
+
+    <!-- Subtle top-left tint blob -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl"
+         style="background: rgba(79,174,79,0.08);"></div>
+
+    <div class="relative max-w-7xl mx-auto px-6 py-24 lg:py-32 flex items-center">
+      <div class="max-w-xl">
+
+        <!-- Badge -->
+        <span class="font-bebas inline-flex items-center gap-2 text-xs px-4 py-1.5 rounded-full mb-6"
+              style="background-color: #edfaed; color: #236a37; letter-spacing: 2px; border: 1px solid #b6e8b6;">
+          🌿 THAILAND'S FINEST · SINCE 2018
+        </span>
+
+        <h1 class="font-bold mb-6 leading-tight" style="color: #16381c; font-size: clamp(2.6rem, 5vw, 4.5rem);">
+          Your Gateway to<br />
+          <span style="color: #236a37;">Premium</span> Produce
+        </h1>
+
+        <p class="text-lg mb-10" style="color: #4a6650; line-height: 1.7;">
+          Export-grade tropical fruits sourced directly from certified Thai growers.
+          Consistent quality, reliable volumes, farm-to-table freshness across borders.
+        </p>
+
+        <div class="flex flex-wrap gap-4">
+          <a href="/quote"
+             class="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full text-white transition-all hover:scale-105"
+             style="background-color: #236a37; box-shadow: 0 4px 24px rgba(35,106,55,0.3);">
+            🧾 Request a Quote
+          </a>
+          <a href="/products?_brand=fruithai"
+             class="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full transition-all hover:scale-105 border-2"
+             style="border-color: #236a37; color: #236a37; background: white;">
+            Browse Products →
+          </a>
+        </div>
+
+        <!-- Quick trust stats -->
+        <div class="flex gap-8 mt-12 pt-10 border-t" style="border-color: #e8f5e8;">
+          {[
+            { num: '50+', label: 'Products' },
+            { num: '20+', label: 'Countries' },
+            { num: '24h',  label: 'Response Time' },
+          ].map(s => (
+            <div>
+              <p class="text-2xl font-bold" style="color: #236a37;">{s.num}</p>
+              <p class="text-xs" style="color: #7a9a7a;">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Brand Pillars ── white cards on very light green -->
+  <section class="py-16 px-6" style="background: #f2fbf3;">
+    <div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-5">
+      {[
+        { icon: '🌿', title: 'Farm-to-Table Fresh',   body: 'Direct sourcing from certified Thai farms — minimal handling, maximum freshness on arrival.' },
+        { icon: '✅', title: 'Export-Grade Quality',  body: 'Every batch meets international export standards. Consistent grading, reliable specs, every shipment.' },
+        { icon: '🌏', title: 'Global Reach',          body: 'Trusted supply chain delivering across borders. Unbeatable variety, honest pricing, seamless logistics.' },
+      ].map(v => (
+        <div class="bg-white rounded-2xl p-7 shadow-sm border" style="border-color: #ddf0de;">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+               style="background: #edfaed;">{v.icon}</div>
+          <h3 class="font-bold text-lg mb-2" style="color: #16381c;">{v.title}</h3>
+          <p class="text-sm leading-relaxed" style="color: #6a8a6a;">{v.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── Seasonal Chart ── white -->
+  <section class="py-20 px-6" style="background: white;">
+    <div class="max-w-7xl mx-auto">
+      <p class="font-bebas uppercase tracking-widest mb-2 text-sm" style="color: #4fae4f; letter-spacing: 3px;">
+        Availability
       </p>
-      <a href="/quote" class="btn-primary" style="background-color: var(--color-orange-fruit);">
-        Request a Quote
-      </a>
+      <h2 class="text-3xl md:text-4xl font-bold mb-3" style="color: #16381c;">
+        Seasonal Chart
+      </h2>
+      <p class="mb-10 max-w-xl" style="color: #5a7a5a;">
+        Plan your orders in advance. The chart shows typical availability windows — contact us for current stock and off-season supply options.
+      </p>
+      <SeasonalChart products={fruithaiProducts} accentColor="#236a37" />
     </div>
   </section>
 
-  <!-- Seasonal Chart -->
-  <section class="py-20 px-6" style="background-color: var(--color-cream);">
+  <!-- ── Product Gallery ── very light tint -->
+  <section class="py-20 px-6" style="background: #f8fdf8;">
     <div class="max-w-7xl mx-auto">
-      <p class="text-sm font-mono font-semibold uppercase tracking-widest opacity-50 mb-2">Availability</p>
-      <h2 class="section-title mb-3">Seasonal Chart</h2>
-      <p class="opacity-60 mb-10 max-w-xl">Plan your orders in advance. The chart shows typical availability windows — contact us for current stock and off-season supply options.</p>
-      <SeasonalChart products={fruithaiProducts} accentColor="var(--color-orange-fruit)" />
-    </div>
-  </section>
-
-  <!-- Product Gallery -->
-  <section class="py-20 px-6">
-    <div class="max-w-7xl mx-auto">
-      <p class="text-sm font-mono font-semibold uppercase tracking-widest opacity-50 mb-2">Our Products</p>
-      <h2 class="section-title mb-10">Product Range</h2>
+      <p class="font-bebas uppercase tracking-widest mb-2 text-sm" style="color: #4fae4f; letter-spacing: 3px;">
+        Our Products
+      </p>
+      <h2 class="text-3xl md:text-4xl font-bold mb-10" style="color: #16381c;">
+        Product Range
+      </h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {fruithaiProducts.map(p => (
           <ProductCard
@@ -71,7 +140,7 @@ const dbNotReady = IS_DEV && fruithaiProducts.length === 0
             image={p.image}
             unit={p.unit}
             tags={p.tags}
-            accentColor="var(--color-orange-fruit)"
+            accentColor="#236a37"
             brand="fruithai"
           />
         ))}
@@ -79,19 +148,32 @@ const dbNotReady = IS_DEV && fruithaiProducts.length === 0
     </div>
   </section>
 
-  <!-- Quote CTA banner -->
-  <section class="py-20 px-6" style="background-color: var(--color-orange-fruit);">
-    <div class="max-w-3xl mx-auto text-center text-white">
-      <h2 class="text-3xl md:text-4xl font-bold mb-4" style="font-family: var(--font-heading)">
+  <!-- ── CTA ── the ONE dark section for contrast -->
+  <section class="py-24 px-6 relative overflow-hidden" style="background: #236a37;">
+    <!-- Subtle watermelon-line overlay -->
+    <div class="absolute inset-0 opacity-[0.07]"
+         style="background: repeating-conic-gradient(from 0deg, transparent 0deg, transparent 8deg, white 9deg, transparent 10deg);"></div>
+    <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full blur-3xl opacity-20"
+         style="background: #4fae4f;"></div>
+
+    <div class="relative max-w-3xl mx-auto text-center text-white">
+      <p class="font-bebas uppercase tracking-widest mb-4 text-sm" style="color: rgba(255,255,255,0.6); letter-spacing: 3px;">
         Ready to Source?
+      </p>
+      <h2 class="text-4xl md:text-5xl font-bold mb-4">
+        Build Your Quote
       </h2>
-      <p class="opacity-80 mb-8">Add products to your quote basket and submit a request. We'll respond within 24 hours with pricing and availability.</p>
-      <a href="/quote" class="inline-flex items-center gap-2 bg-white font-semibold px-8 py-4 rounded-full transition-transform hover:scale-105"
-         style="color: var(--color-orange-fruit)">
-        🧾 Build Your Quote
+      <p class="mb-10 text-lg" style="color: rgba(255,255,255,0.75);">
+        Add products to your quote basket and submit a request. We'll respond within 24 hours with pricing and availability.
+      </p>
+      <a href="/quote"
+         class="inline-flex items-center gap-3 font-bold text-lg px-10 py-5 rounded-full transition-all hover:scale-105"
+         style="background-color: white; color: #236a37;">
+        🧾 Start Your Quote
       </a>
     </div>
   </section>
+
 </BrandLayout>
 
 <script>

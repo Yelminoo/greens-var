@@ -1,6 +1,18 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro'
 const IS_DEV = import.meta.env.DEV
+
+const IS_SUBDOMAIN = process.env['SUBDOMAIN_ROUTING'] === 'true'
+const origin = Astro.url.origin  // e.g. http://localhost:4321 or https://greensvar.com
+
+function brandUrl(brand: string) {
+  return IS_SUBDOMAIN
+    ? `https://${brand}.greensvar.com`
+    : `${origin}/${brand}`
+}
+
+const fruThaiUrl  = brandUrl('fruithai')
+const variegataUrl = brandUrl('variegata')
 ---
 
 <MainLayout title="Home">
@@ -8,9 +20,9 @@ const IS_DEV = import.meta.env.DEV
   {IS_DEV && (
     <div style="background:#1C2B1E;border-bottom:2px solid #A8D635;padding:12px 24px;display:flex;align-items:center;gap:16px;font-family:monospace;font-size:13px;">
       <span style="color:#A8D635;font-weight:700;">DEV</span>
-      <span style="color:rgba(255,255,255,0.4)">Open brand sites via subdomain:</span>
-      <a href="http://fruithai.localhost:4321"   style="color:#F4821F;text-decoration:none;font-weight:600;" target="_blank">fruithai.localhost:4321 →</a>
-      <a href="http://variegata.localhost:4321"  style="color:#1A9E8F;text-decoration:none;font-weight:600;" target="_blank">variegata.localhost:4321 →</a>
+      <span style="color:rgba(255,255,255,0.4)">Open brand sites via path:</span>
+      <a href="/fruithai"   style="color:#F4821F;text-decoration:none;font-weight:600;" target="_blank">/fruithai →</a>
+      <a href="/variegata"  style="color:#1A9E8F;text-decoration:none;font-weight:600;" target="_blank">/variegata →</a>
       <a href="/admin"                           style="color:#A8D635;text-decoration:none;font-weight:600;margin-left:auto;" target="_blank">Admin →</a>
     </div>
   )}
@@ -44,7 +56,7 @@ const IS_DEV = import.meta.env.DEV
       <div class="grid md:grid-cols-2 gap-8">
 
         <!-- FruThai -->
-        <a href="http://fruithai.greensvar.com"
+        <a href={fruThaiUrl}
            class="group relative rounded-3xl overflow-hidden min-h-[420px] flex flex-col justify-end p-10"
            style="background-color: #1a0f00;">
           <div class="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
@@ -62,7 +74,7 @@ const IS_DEV = import.meta.env.DEV
         </a>
 
         <!-- Variegata -->
-        <a href="http://variegata.greensvar.com"
+        <a href={variegataUrl}
            class="group relative rounded-3xl overflow-hidden min-h-[420px] flex flex-col justify-end p-10"
            style="background-color: #001a14;">
           <div class="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
@@ -78,6 +90,50 @@ const IS_DEV = import.meta.env.DEV
             </span>
           </div>
         </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us -->
+  <section class="py-24 px-6" style="background-color: var(--color-dark);">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+
+        <!-- Text -->
+        <div>
+          <p class="text-sm font-mono font-semibold uppercase tracking-widest mb-4" style="color: var(--color-lime-accent);">About Us</p>
+          <h2 class="text-4xl md:text-5xl font-bold text-white leading-tight mb-6" style="font-family: var(--font-heading)">
+            Thailand's Trusted Produce Exporter
+          </h2>
+          <p class="text-white/60 leading-relaxed mb-5">
+            Greens Variegated is a Bangkok-based export company specialising in premium tropical fruits, vegetables, and herbs sourced directly from Thailand's most productive farming regions.
+          </p>
+          <p class="text-white/60 leading-relaxed mb-8">
+            We work closely with certified growers, handle all documentation and logistics, and deliver to importers and distributors in over 20 countries — ensuring freshness, compliance, and consistency with every shipment.
+          </p>
+          <a href="/contact" class="btn-primary">Get in Touch</a>
+        </div>
+
+        <!-- Stats / Trust signals -->
+        <div class="grid grid-cols-2 gap-6">
+          <div class="rounded-2xl p-8 flex flex-col gap-2" style="background-color: var(--color-green-primary);">
+            <span class="text-5xl font-bold text-white" style="font-family: var(--font-heading)">20+</span>
+            <span class="text-white/70 text-sm leading-snug">Countries receiving our produce every season</span>
+          </div>
+          <div class="rounded-2xl p-8 flex flex-col gap-2" style="background: var(--color-lime-accent);">
+            <span class="text-5xl font-bold text-black" style="font-family: var(--font-heading)">100%</span>
+            <span class="text-black/70 text-sm leading-snug">Export-grade quality with full documentation</span>
+          </div>
+          <div class="rounded-2xl p-8 flex flex-col gap-2" style="background-color: #1a2e1c;">
+            <span class="text-5xl font-bold text-white" style="font-family: var(--font-heading)">2</span>
+            <span class="text-white/70 text-sm leading-snug">Dedicated brands — fruits &amp; vegetables / herbs</span>
+          </div>
+          <div class="rounded-2xl p-8 flex flex-col gap-2" style="background-color: #1a2e1c;">
+            <span class="text-5xl font-bold text-white" style="font-family: var(--font-heading)">FCL</span>
+            <span class="text-white/70 text-sm leading-snug">Full container loads &amp; LCL sea / airfreight available</span>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>

@@ -148,11 +148,49 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
           </div>
         </div>
         <div class="full">
-          <label for="image">Image URL</label>
-          <input type="text" id="image" value={product?.image ?? ''} placeholder="/images/fruithai/mango.jpg or https://..." />
-          <img id="img-preview" class="img-preview"
-               src={product?.image ?? '/images/placeholder.svg'}
-               onerror="this.src='/images/placeholder.svg'" />
+          <label>Product Image</label>
+          <!-- Upload zone -->
+          <div id="upload-zone"
+               style="border:2px dashed #e0e0e0;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:10px;"
+               onclick="document.getElementById('file-input').click()"
+               ondragover="event.preventDefault();this.style.borderColor='#2D7D46'"
+               ondragleave="this.style.borderColor='#e0e0e0'"
+               ondrop="handleDrop(event)">
+            <div id="upload-prompt">
+              <div style="font-size:28px;margin-bottom:6px;">📷</div>
+              <div style="font-size:13px;font-weight:600;color:#444;">Click or drag to upload image</div>
+              <div style="font-size:12px;color:#aaa;margin-top:4px;">JPEG, PNG, WebP · max 5 MB</div>
+            </div>
+            <div id="upload-progress" style="display:none;font-size:13px;color:#2D7D46;font-weight:600;">Uploading…</div>
+          </div>
+          <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" />
+
+          <!-- Preview -->
+          {(product?.image) && (
+            <div id="preview-wrap" style="position:relative;display:inline-block;">
+              <img id="img-preview" class="img-preview"
+                   src={product.image}
+                   onerror="this.src='/images/placeholder.svg'"
+                   style="width:180px;height:120px;object-fit:cover;border-radius:10px;display:block;" />
+              <button type="button" id="remove-img-btn"
+                      onclick="removeImage()"
+                      style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+            </div>
+          )}
+          {(!product?.image) && (
+            <div id="preview-wrap" style="display:none;position:relative;display:inline-block;">
+              <img id="img-preview" class="img-preview" src=""
+                   style="width:180px;height:120px;object-fit:cover;border-radius:10px;display:block;" />
+              <button type="button" id="remove-img-btn"
+                      onclick="removeImage()"
+                      style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;line-height:1;">✕</button>
+            </div>
+          )}
+
+          <!-- Hidden field holds the final image URL sent with form save -->
+          <input type="hidden" id="image" value={product?.image ?? ''} />
+          <p class="hint" style="margin-top:8px;">Stored as <code style="font-size:11px;">/images/products/timestamp_name.jpg</code> · or paste a URL below</p>
+          <input type="text" id="image-url-input" value={product?.image ?? ''} placeholder="Or paste an image URL…" style="margin-top:6px;" />
         </div>
         <div class="full">
           <label>Tags</label>
@@ -165,37 +203,42 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
       </div>
     </div>
 
-    <!-- Invoice defaults -->
+    <!-- Invoice defaults — collapsed by default, filled per-quote -->
     <div class="card">
-      <h2>Invoice Defaults</h2>
-      <p style="font-size:13px;color:#888;margin-bottom:20px">
-        These auto-fill the commercial invoice when a quote is built. All editable per-quote.
-      </p>
-      <div class="grid-3">
-        <div>
-          <label for="kgPerUnit">KG per Unit</label>
-          <input type="number" id="kgPerUnit" min="0" step="0.1"
-                 value={product?.kgPerUnit ?? ''}
-                 placeholder="e.g. 5" />
-          <p class="hint">Net weight of 1 ordered unit (carton/bag) in KGS</p>
+      <button type="button" id="invoice-toggle"
+              onclick="toggleInvoiceDefaults()"
+              style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;cursor:pointer;padding:0;text-align:left;">
+        <h2 style="margin:0;">Invoice Defaults <span style="font-size:11px;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;font-family:inherit;">(optional)</span></h2>
+        <span id="invoice-toggle-icon" style="font-size:18px;color:#aaa;transition:transform .2s;">▸</span>
+      </button>
+      <div id="invoice-defaults-body" style="display:none;margin-top:20px;">
+        <p style="font-size:13px;color:#aaa;margin-bottom:20px;">
+          Optional hints to pre-fill the commercial invoice on the quote page. Values are always editable per-quote. Leave blank if pricing varies.
+        </p>
+        <div class="grid-3">
+          <div>
+            <label for="kgPerUnit">KG per Unit</label>
+            <input type="number" id="kgPerUnit" min="0" step="0.1"
+                   value={product?.kgPerUnit ?? ''}
+                   placeholder="e.g. 5" />
+            <p class="hint">Net weight of 1 unit in KG</p>
+          </div>
+          <div>
+            <label for="boxesPerUnit">Boxes per Unit</label>
+            <input type="number" id="boxesPerUnit" min="1" step="1"
+                   value={product?.boxesPerUnit ?? ''}
+                   placeholder="e.g. 1" />
+            <p class="hint">Packages per ordered unit</p>
+          </div>
+          <div>
+            <label for="pricePerKg">Price per KG (USD)</label>
+            <input type="number" id="pricePerKg" min="0" step="0.01"
+                   value={product?.pricePerKg ?? ''}
+                   placeholder="e.g. 2.50" />
+            <p class="hint">Suggested base price</p>
+          </div>
         </div>
-        <div>
-          <label for="boxesPerUnit">Boxes per Unit</label>
-          <input type="number" id="boxesPerUnit" min="1" step="1"
-                 value={product?.boxesPerUnit ?? ''}
-                 placeholder="e.g. 1" />
-          <p class="hint">Number of boxes/packages per 1 ordered unit</p>
-        </div>
-        <div>
-          <label for="pricePerKg">Price per KG (USD)</label>
-          <input type="number" id="pricePerKg" min="0" step="0.01"
-                 value={product?.pricePerKg ?? ''}
-                 placeholder="e.g. 2.50" />
-          <p class="hint">Suggested base price — editable on each quote</p>
-        </div>
-      </div>
-      <div style="margin-top:14px;padding:12px 16px;background:#f9fdf9;border-radius:10px;font-size:12px;color:#555;font-family:'DM Mono',monospace" id="invoice-preview">
-        <!-- JS fills this -->
+        <div style="margin-top:14px;padding:12px 16px;background:#f9fdf9;border-radius:10px;font-size:12px;color:#555;font-family:'DM Mono',monospace" id="invoice-preview"></div>
       </div>
     </div>
 
@@ -277,11 +320,71 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
       }
     })
 
-    // ── Image preview ─────────────────────────────────────────
-    document.getElementById('image').addEventListener('input', e => {
-      const preview = document.getElementById('img-preview')
-      preview.src = e.target.value || '/images/placeholder.svg'
+    // ── Image upload ──────────────────────────────────────────
+    const fileInput    = document.getElementById('file-input')
+    const uploadZone   = document.getElementById('upload-zone')
+    const uploadPrompt = document.getElementById('upload-prompt')
+    const uploadProg   = document.getElementById('upload-progress')
+    const previewWrap  = document.getElementById('preview-wrap')
+    const imgPreview   = document.getElementById('img-preview')
+    const imageField   = document.getElementById('image')          // hidden field
+    const urlInput     = document.getElementById('image-url-input') // paste URL field
+
+    function setImage(url) {
+      imageField.value  = url
+      urlInput.value    = url
+      imgPreview.src    = url
+      previewWrap.style.display = url ? 'inline-block' : 'none'
+    }
+
+    window.removeImage = function() {
+      setImage('')
+    }
+
+    // URL paste field syncs to hidden field
+    urlInput.addEventListener('input', e => setImage(e.target.value.trim()))
+
+    // File picker
+    fileInput.addEventListener('change', e => {
+      if (e.target.files?.[0]) uploadFile(e.target.files[0])
     })
+
+    // Drag & drop
+    window.handleDrop = function(e) {
+      e.preventDefault()
+      uploadZone.style.borderColor = '#e0e0e0'
+      const file = e.dataTransfer?.files?.[0]
+      if (file && file.type.startsWith('image/')) uploadFile(file)
+    }
+
+    async function uploadFile(file) {
+      uploadPrompt.style.display  = 'none'
+      uploadProg.style.display    = 'block'
+      uploadZone.style.borderColor = '#2D7D46'
+
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const res  = await fetch('/api/admin/products/upload', { method: 'POST', body: fd })
+        const json = await res.json()
+
+        if (!res.ok) throw new Error(json.error ?? 'Upload failed')
+
+        setImage(json.url)
+      } catch (err) {
+        alert('Image upload failed: ' + err.message)
+      } finally {
+        uploadPrompt.style.display  = 'block'
+        uploadProg.style.display    = 'none'
+        uploadZone.style.borderColor = '#e0e0e0'
+        fileInput.value = ''
+      }
+    }
+
+    // Init: show preview wrap if there's an image
+    if (imageField.value) {
+      previewWrap.style.display = 'inline-block'
+    }
 
     // ── Season toggle ─────────────────────────────────────────
     function toggleMonth(btn) {
@@ -314,6 +417,15 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
     })()
 
     window.toggleMonth = toggleMonth
+
+    // ── Invoice defaults toggle ───────────────────────────────
+    window.toggleInvoiceDefaults = function() {
+      const body = document.getElementById('invoice-defaults-body')
+      const icon = document.getElementById('invoice-toggle-icon')
+      const open = body.style.display === 'none'
+      body.style.display = open ? 'block' : 'none'
+      icon.textContent   = open ? '▾' : '▸'
+    }
 
     // ── Invoice defaults preview ──────────────────────────────
     function updateInvoicePreview() {

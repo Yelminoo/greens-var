@@ -1,0 +1,152 @@
+---
+import MainLayout from '../layouts/MainLayout.astro'
+
+const IS_SUBDOMAIN = process.env['SUBDOMAIN_ROUTING'] === 'true'
+const origin = Astro.url.origin
+
+function brandUrl(brand: string) {
+  return IS_SUBDOMAIN
+    ? `https://${brand}.greensvar.com`
+    : `${origin}/${brand}`
+}
+
+const fruThaiUrl   = brandUrl('fruithai')
+const variegataUrl = brandUrl('variegata')
+---
+
+<MainLayout title="About Us">
+
+  <!-- Hero -->
+  <section class="py-24 px-6" style="background-color: var(--color-dark);">
+    <div class="max-w-7xl mx-auto text-center">
+      <p class="text-sm font-mono font-semibold uppercase tracking-widest mb-4" style="color: var(--color-lime-accent);">About Us</p>
+      <h1 class="text-5xl md:text-6xl font-bold text-white leading-tight mb-6" style="font-family: var(--font-heading)">
+        Thailand's Trusted<br/>Produce Exporter
+      </h1>
+      <p class="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed">
+        Greens Variegated connects Thailand's finest farms with importers, distributors, and food businesses around the world.
+      </p>
+    </div>
+  </section>
+
+  <!-- Our Story -->
+  <section class="py-20 px-6">
+    <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      <div>
+        <p class="text-sm font-mono font-semibold uppercase tracking-widest mb-4" style="color: var(--color-green-primary);">Our Story</p>
+        <h2 class="text-4xl font-bold mb-6" style="font-family: var(--font-heading); color: var(--color-dark);">
+          Built on Relationships, Grown on Trust
+        </h2>
+        <p class="text-gray-500 leading-relaxed mb-4">
+          Greens Variegated was founded by a team with deep roots in Thai agriculture and international trade. We saw a gap between exceptional Thai produce and the global buyers who needed it — and built a business to bridge that gap.
+        </p>
+        <p class="text-gray-500 leading-relaxed mb-4">
+          From our base in Bangkok, we work directly with certified growers across Thailand's premier farming regions: the orchards of Chiang Mai, the herb gardens of the Central Plains, and the tropical farms of the South.
+        </p>
+        <p class="text-gray-500 leading-relaxed">
+          Every shipment we send carries our commitment to freshness, compliance, and consistency — from the farm gate to your warehouse.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 gap-6">
+        <div class="rounded-2xl p-8 text-center" style="background-color: var(--color-green-primary);">
+          <div class="text-5xl font-bold text-white mb-2" style="font-family: var(--font-heading);">20+</div>
+          <div class="text-white/70 text-sm">Countries Served</div>
+        </div>
+        <div class="rounded-2xl p-8 text-center" style="background: var(--color-lime-accent);">
+          <div class="text-5xl font-bold text-black mb-2" style="font-family: var(--font-heading);">100%</div>
+          <div class="text-black/70 text-sm">Export-Grade Quality</div>
+        </div>
+        <div class="rounded-2xl p-8 text-center" style="background-color: #f0faf2;">
+          <div class="text-5xl font-bold mb-2" style="font-family: var(--font-heading); color: var(--color-green-primary);">2</div>
+          <div class="text-gray-500 text-sm">Dedicated Brands</div>
+        </div>
+        <div class="rounded-2xl p-8 text-center" style="background-color: #f0faf2;">
+          <div class="text-5xl font-bold mb-2" style="font-family: var(--font-heading); color: var(--color-green-primary);">FCL</div>
+          <div class="text-gray-500 text-sm">Sea & Airfreight Options</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Values -->
+  <section class="py-20 px-6" style="background-color: #f8faf8;">
+    <div class="max-w-7xl mx-auto">
+      <p class="text-sm font-mono font-semibold uppercase tracking-widest mb-4 text-center" style="color: var(--color-green-primary);">What We Stand For</p>
+      <h2 class="text-4xl font-bold text-center mb-16" style="font-family: var(--font-heading); color: var(--color-dark);">Our Values</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+          <div class="text-4xl mb-4">🌿</div>
+          <h3 class="text-xl font-bold mb-3" style="font-family: var(--font-heading); color: var(--color-dark);">Quality First</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            We only export produce that meets our strict internal standards — and we back that with third-party inspections and full phytosanitary certification.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+          <div class="text-4xl mb-4">🤝</div>
+          <h3 class="text-xl font-bold mb-3" style="font-family: var(--font-heading); color: var(--color-dark);">Long-Term Partnerships</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            We're not a spot-market broker. We build ongoing relationships with both our growers and our buyers — so you get reliable supply, season after season.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+          <div class="text-4xl mb-4">📋</div>
+          <h3 class="text-xl font-bold mb-3" style="font-family: var(--font-heading); color: var(--color-dark);">Full Transparency</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Clear pricing, detailed quotations, and complete export documentation — no hidden costs, no surprises at the port.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Brands -->
+  <section class="py-20 px-6">
+    <div class="max-w-7xl mx-auto">
+      <p class="text-sm font-mono font-semibold uppercase tracking-widest mb-4 text-center" style="color: var(--color-green-primary);">What We Export</p>
+      <h2 class="text-4xl font-bold text-center mb-16" style="font-family: var(--font-heading); color: var(--color-dark);">Two Brands, One Standard</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl p-10 text-white" style="background-color: #1a0f00;">
+          <span class="inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-4"
+                style="background-color: var(--color-orange-fruit); color: white;">Fruits</span>
+          <h3 class="text-3xl font-bold mb-3" style="font-family: var(--font-heading);">FruThai</h3>
+          <p class="text-white/60 leading-relaxed mb-6">
+            Premium tropical fruits — Mango, Durian, Longan, Mangosteen, Rambutan, and more. Sourced at peak ripeness, packed for long-haul export.
+          </p>
+          <a href={fruThaiUrl} class="inline-flex items-center gap-2 font-semibold text-white hover:gap-4 transition-all"
+             style="color: var(--color-orange-fruit);">
+            Visit FruThai →
+          </a>
+        </div>
+        <div class="rounded-2xl p-10 text-white" style="background-color: #001a14;">
+          <span class="inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-4"
+                style="background-color: var(--color-teal-veg); color: white;">Vegetables & Herbs</span>
+          <h3 class="text-3xl font-bold mb-3" style="font-family: var(--font-heading);">Variegata</h3>
+          <p class="text-white/60 leading-relaxed mb-6">
+            Authentic Thai herbs and vegetables — Lemongrass, Galangal, Kaffir Lime, Thai Chili, Baby Corn, and more. The backbone of Thai cuisine, exported fresh.
+          </p>
+          <a href={variegataUrl} class="inline-flex items-center gap-2 font-semibold hover:gap-4 transition-all"
+             style="color: var(--color-teal-veg);">
+            Visit Variegata →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20 px-6 text-center" style="background-color: var(--color-green-primary);">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-4xl font-bold text-white mb-4" style="font-family: var(--font-heading);">Ready to Source from Thailand?</h2>
+      <p class="text-white/70 mb-8 leading-relaxed">
+        Tell us what you need — product, volume, destination — and we'll get back to you with a detailed quote within 1 business day.
+      </p>
+      <div class="flex flex-wrap gap-4 justify-center">
+        <a href="/contact" class="btn-primary" style="background: white; color: var(--color-green-primary);">Contact Us</a>
+        <a href="/services" class="btn-outline" style="border-color: white; color: white;">Our Services</a>
+      </div>
+    </div>
+  </section>
+
+</MainLayout>

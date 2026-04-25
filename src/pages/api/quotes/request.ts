@@ -13,11 +13,12 @@ const schema = z.object({
   deliveryDate: z.string().optional(),
   notes:        z.string().optional(),
   items: z.array(z.object({
-    slug:     z.string(),
-    name:     z.string(),
-    unit:     z.string(),
-    quantity: z.number().min(1),
-    brand:    z.string(),
+    slug:        z.string(),
+    name:        z.string(),
+    unit:        z.string().optional().default('unit'),
+    quantity:    z.number().min(1),
+    brand:       z.string(),
+    requestedKg: z.number().nullable().optional(),
   })).min(1),
 })
 
@@ -53,15 +54,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
         productSlug: item.slug,
         quantity:    item.quantity,
         unit:        item.unit,
+        weightKg:    item.requestedKg ?? null,  // customer's requested KG — admin can refine later
       }))
     )
 
-    // Fire emails in parallel, don't block the response on failure
+    // Fire emails in parallel — log failures but don't block the response
     const emailItems = data.items.map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit }))
-    await Promise.allSettled([
+    const [r1, r2] = await Promise.allSettled([
       sendRequestReceivedEmail({ ref, buyerName: data.buyerName, email: data.email, items: emailItems }),
       sendNewRequestAlertEmail({ ref, buyerName: data.buyerName, company: data.company, email: data.email, phone: data.phone, region: data.region, notes: data.notes, items: emailItems }),
     ])
+    if (r1.status === 'rejected') console.error('[email] customer confirmation failed:', r1.reason)
+    if (r2.status === 'rejected') console.error('[email] admin alert failed:', r2.reason)
 
     return new Response(JSON.stringify({ ref }), {
       status: 201,

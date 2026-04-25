@@ -3,6 +3,22 @@ import { z } from 'zod'
 import { db } from '../../../../db/db'
 import { products, productSeasons } from '../../../../db/schema'
 import { eq } from 'drizzle-orm'
+import { unlink } from 'fs/promises'
+import { join } from 'path'
+
+const UPLOAD_DIR = process.env['IMAGE_UPLOAD_DIR']
+  ?? join(process.cwd(), 'public', 'images', 'products')
+
+async function deleteImageFile(imageUrl: string | null | undefined) {
+  if (!imageUrl || !imageUrl.startsWith('/images/products/')) return
+  const filename = imageUrl.split('/images/products/')[1]
+  if (!filename) return
+  try {
+    await unlink(join(UPLOAD_DIR, filename))
+  } catch {
+    // File already gone — not an error
+  }
+}
 
 const updateSchema = z.object({
   slug:        z.string().min(1).regex(/^[a-z0-9-]+$/),
@@ -27,6 +43,12 @@ export const PUT: APIRoute = async ({ params, request }) => {
   try {
     const id   = Number(params.id)
     const data = updateSchema.parse(await request.json())
+
+    // If image changed, delete the old uploaded file
+    const [existing] = await db.select({ image: products.image }).from(products).where(eq(products.id, id))
+    if (existing?.image !== data.image) {
+      await deleteImageFile(existing?.image)
+    }
 
     await db.update(products).set({
       slug:        data.slug,
@@ -70,6 +92,11 @@ export const PUT: APIRoute = async ({ params, request }) => {
 export const DELETE: APIRoute = async ({ params }) => {
   try {
     const id = Number(params.id)
+
+    // Delete uploaded image file if it's one we own
+    const [existing] = await db.select({ image: products.image }).from(products).where(eq(products.id, id))
+    await deleteImageFile(existing?.image)
+
     // Seasons are cascade deleted via FK
     await db.delete(products).where(eq(products.id, id))
     return new Response(JSON.stringify({ ok: true }), {

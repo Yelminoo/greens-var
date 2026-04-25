@@ -1,54 +1,56 @@
-import nodemailer from 'nodemailer'
-import type { Transporter } from 'nodemailer'
+import { Resend } from 'resend'
 
-// -- Swap back to Resend when ready --
-// import { Resend } from 'resend'
-// const resend = new Resend(import.meta.env.RESEND_API_KEY)
-
-// Display name shown to recipient — can be anything, no domain needed.
-// Actual sending address is GMAIL_USER (your Gmail account).
-const FROM_NAME  = import.meta.env.QUOTE_FROM_NAME  ?? 'Greens Variegated'
-const FROM_EMAIL = import.meta.env.GMAIL_USER        ?? import.meta.env.QUOTE_FROM_EMAIL ?? 'noreply@example.com'
-const FROM = `"${FROM_NAME}" <${FROM_EMAIL}>`
-
-const TO = import.meta.env.QUOTE_TO_EMAIL ?? FROM_EMAIL
-const IS_DEV = import.meta.env.DEV
-
-// In dev: Ethereal catches emails and gives a preview URL — nothing actually sends.
-// In prod: Gmail via App Password.
-async function createTransport(): Promise<Transporter> {
-  if (IS_DEV) {
-    const testAccount = await nodemailer.createTestAccount()
-    return nodemailer.createTransport({
-      host:   'smtp.ethereal.email',
-      port:   587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    })
-  }
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: import.meta.env.GMAIL_USER,
-      pass: import.meta.env.GMAIL_APP_PASSWORD,
-    },
-  })
+function getResend() {
+  return new Resend(getConfig().apiKey)
 }
 
-async function sendMail(opts: Parameters<Transporter['sendMail']>[0]) {
-  const transport = await createTransport()
-  const info = await transport.sendMail(opts)
+const IS_DEV = import.meta.env.DEV
 
-  if (IS_DEV) {
-    // Logs a clickable URL to preview the email in the browser
-    console.log(`\n📧 [DEV] Email sent — preview: ${nodemailer.getTestMessageUrl(info)}\n`)
+// Read config fresh on every call — avoids module-level caching issues with Vite
+function getConfig() {
+  const fromName  = import.meta.env.QUOTE_FROM_NAME  ?? process.env['QUOTE_FROM_NAME']  ?? 'Greens Variegated'
+  const fromEmail = import.meta.env.QUOTE_FROM_EMAIL ?? process.env['QUOTE_FROM_EMAIL'] ?? import.meta.env.GMAIL_USER ?? process.env['GMAIL_USER'] ?? 'info@greensvar.com'
+  const to        = import.meta.env.QUOTE_TO_EMAIL   ?? process.env['QUOTE_TO_EMAIL']   ?? fromEmail
+  const replyTo   = import.meta.env.REPLY_TO_EMAIL   ?? process.env['REPLY_TO_EMAIL']   ?? to
+  const apiKey    = import.meta.env.RESEND_API_KEY   ?? process.env['RESEND_API_KEY']
+  return { fromName, fromEmail, from: `${fromName} <${fromEmail}>`, to, replyTo, apiKey }
+}
+
+async function sendMail(opts: {
+  to:          string
+  replyTo?:    string
+  subject:     string
+  html:        string
+  attachments?: { filename: string; content: Buffer }[]
+}) {
+  const cfg = getConfig()
+
+  // Skip sending if no API key — just log
+  if (!cfg.apiKey) {
+    console.log(`\n📧 [NO API KEY] Would send email to: ${opts.to} — ${opts.subject}\n`)
+    return
   }
 
-  return info
+  if (IS_DEV) {
+    console.log(`\n📧 [DEV] Sending via Resend: ${opts.to} | from: ${cfg.from}`)
+  }
+
+  const { error } = await getResend().emails.send({
+    from:        cfg.from,
+    to:          opts.to,
+    replyTo:     opts.replyTo ?? cfg.replyTo,
+    subject:     opts.subject,
+    html:        opts.html,
+    attachments: opts.attachments?.map(a => ({
+      filename: a.filename,
+      content:  a.content.toString('base64'),
+    })),
+  })
+
+  if (error) {
+    console.error('[Resend] send error:', error)
+    throw new Error(error.message)
+  }
 }
 
 export async function sendRequestReceivedEmail(opts: {
@@ -58,12 +60,13 @@ export async function sendRequestReceivedEmail(opts: {
   items: { name: string; quantity: number; unit: string }[]
 }) {
   const itemRows = opts.items.map(i =>
-    `<tr><td style="padding:8px 12px;border-bottom:1px solid #eee">${i.name}</td>
-     <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${i.quantity} × ${i.unit}</td></tr>`
+    `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee">${i.name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${i.quantity} × ${i.unit || 'unit'}</td>
+    </tr>`
   ).join('')
 
   await sendMail({
-    from:    FROM,
     to:      opts.email,
     subject: `Your quote request has been received — Ref ${opts.ref}`,
     html: `
@@ -82,7 +85,7 @@ export async function sendRequestReceivedEmail(opts: {
             </tr></thead>
             <tbody>${itemRows}</tbody>
           </table>
-          <p style="color:#888;font-size:13px">Have questions? Reply to this email or contact us at info@greensvar.com</p>
+          <p style="color:#888;font-size:13px">Have questions? Simply reply to this email — we'll get back to you within 24 hours.</p>
         </div>
       </div>`,
   })
@@ -99,13 +102,15 @@ export async function sendNewRequestAlertEmail(opts: {
   items: { name: string; quantity: number; unit: string }[]
 }) {
   const itemRows = opts.items.map(i =>
-    `<tr><td style="padding:8px 12px;border-bottom:1px solid #eee">${i.name}</td>
-     <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${i.quantity} × ${i.unit}</td></tr>`
+    `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee">${i.name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${i.quantity} × ${i.unit || 'unit'}</td>
+    </tr>`
   ).join('')
 
   await sendMail({
-    from:    FROM,
-    to:      TO,
+    to:      getConfig().to,
+    replyTo: opts.email,   // admin hits Reply → goes straight to the buyer
     subject: `[New Quote Request] ${opts.ref} — ${opts.buyerName}`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1C2B1E">
@@ -147,7 +152,7 @@ export async function sendOutboundQuoteEmail(opts: {
   const itemRows = opts.items.map(i =>
     `<tr>
       <td style="padding:10px 12px;border-bottom:1px solid #eee">${i.name}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:center">${i.quantity} ${i.unit}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:center">${i.quantity} ${i.unit || 'unit'}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:right">$${i.unitPrice.toFixed(2)}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:right"><strong>$${i.totalPrice.toFixed(2)}</strong></td>
     </tr>`
@@ -156,9 +161,9 @@ export async function sendOutboundQuoteEmail(opts: {
   const total = opts.items.reduce((s, i) => s + i.totalPrice, 0)
 
   await sendMail({
-    from:    FROM,
     to:      opts.email,
     subject: `Your quote from Greens Variegated — ${opts.ref}`,
+    attachments: [{ filename: `${opts.ref}.pdf`, content: opts.pdfBuffer }],
     html: `
       <div style="font-family:sans-serif;max-width:620px;margin:0 auto;color:#1C2B1E">
         <div style="background:#2D7D46;padding:32px;border-radius:12px 12px 0 0">
@@ -189,9 +194,5 @@ export async function sendOutboundQuoteEmail(opts: {
           <p style="font-size:13px;color:#888">To accept this quote or ask questions, reply to this email.</p>
         </div>
       </div>`,
-    attachments: [{
-      filename: `${opts.ref}.pdf`,
-      content:  opts.pdfBuffer,
-    }],
   })
 }
