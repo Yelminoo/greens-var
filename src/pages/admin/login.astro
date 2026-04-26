@@ -1,8 +1,8 @@
 ---
 const errorCode = Astro.url.searchParams.get('error')
-const error = errorCode === 'misconfigured'
+const serverError = errorCode === 'misconfigured'
   ? 'Server misconfiguration: ADMIN_PASSWORD_HASH is not set. Set it in .env on the server.'
-  : errorCode ? 'Incorrect password. Please try again.' : null
+  : null
 const { isNgrok } = Astro.locals
 const isDev = import.meta.env.DEV || isNgrok
 ---
@@ -24,7 +24,8 @@ const isDev = import.meta.env.DEV || isNgrok
     input:focus { border-color: #2D7D46; }
     .error { background: #fff0f0; color: #c0392b; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
     button { width: 100%; background: #2D7D46; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: background .2s; }
-    button:hover { background: #5CB85C; }
+    button:hover:not(:disabled) { background: #5CB85C; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
     .logo { font-size: 24px; font-weight: 700; color: #2D7D46; margin-bottom: 24px; }
     .dot { color: #A8D635; }
   </style>
@@ -34,25 +35,72 @@ const isDev = import.meta.env.DEV || isNgrok
     <div class="logo">Greens<span class="dot">.</span> Admin</div>
     <h1>Sign In</h1>
     <p class="sub">Quote management panel</p>
-    {error && <div class="error">{error}</div>}
+
+    {serverError && <div class="error">{serverError}</div>}
+
     {isDev ? (
       <div>
         <div style="background: #f0f9ff; color: #0369a1; border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px;">
           🔓 Development mode — authentication bypassed
         </div>
-        <a href="/admin" style="display: block; width: 100%; background: #2D7D46; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: background .2s;">
+        <a href="/admin" style="display:block;width:100%;background:#2D7D46;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:600;text-align:center;text-decoration:none;">
           Go to Admin Panel
         </a>
       </div>
     ) : (
-      <form method="POST" action="/api/admin/login">
+      <div>
+        <div id="login-error" style="display:none" class="error"></div>
         <div style="margin-bottom:16px">
           <label for="password">Password</label>
-          <input type="password" id="password" name="password" required autofocus />
+          <input type="password" id="password" required autofocus />
         </div>
-        <button type="submit">Sign In</button>
-      </form>
+        <button id="login-btn" type="button">Sign In</button>
+      </div>
     )}
   </div>
+
+  {!isDev && (
+    <script>
+      const btn      = document.getElementById('login-btn')
+      const input    = document.getElementById('password')
+      const errorEl  = document.getElementById('login-error')
+
+      async function doLogin() {
+        const password = input.value
+        if (!password) return
+
+        btn.disabled   = true
+        btn.textContent = 'Signing in…'
+        errorEl.style.display = 'none'
+
+        try {
+          const res  = await fetch('/api/admin/login', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ password }),
+          })
+          const json = await res.json()
+
+          if (res.ok) {
+            window.location.href = '/admin'
+          } else {
+            errorEl.textContent   = json.error ?? 'Incorrect password. Please try again.'
+            errorEl.style.display = 'block'
+            input.value           = ''
+            input.focus()
+          }
+        } catch {
+          errorEl.textContent   = 'Network error. Please try again.'
+          errorEl.style.display = 'block'
+        } finally {
+          btn.disabled    = false
+          btn.textContent = 'Sign In'
+        }
+      }
+
+      btn.addEventListener('click', doLogin)
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+    </script>
+  )}
 </body>
 </html>
