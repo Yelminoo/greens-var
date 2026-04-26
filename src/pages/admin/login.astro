@@ -1,5 +1,8 @@
 ---
-const error = Astro.url.searchParams.get('error')
+const errorCode = Astro.url.searchParams.get('error')
+const error = errorCode === 'misconfigured'
+  ? 'Server misconfiguration: ADMIN_PASSWORD_HASH is not set. Set it in .env on the server.'
+  : errorCode ? 'Incorrect password. Please try again.' : null
 const { isNgrok } = Astro.locals
 const isDev = import.meta.env.DEV || isNgrok
 ---
@@ -31,7 +34,7 @@ const isDev = import.meta.env.DEV || isNgrok
     <div class="logo">Greens<span class="dot">.</span> Admin</div>
     <h1>Sign In</h1>
     <p class="sub">Quote management panel</p>
-    {error && <div class="error">Incorrect password. Please try again.</div>}
+    {error && <div class="error">{error}</div>}
     {isDev ? (
       <div>
         <div style="background: #f0f9ff; color: #0369a1; border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px;">

@@ -1,7 +1,6 @@
 import { defineMiddleware } from 'astro:middleware'
 import { sequence } from 'astro:middleware'
 import { subdomainMiddleware } from './subdomain'
-// import { authMiddleware } from './auth'  // DISABLED
+import { authMiddleware } from './auth'
 
-// export const onRequest = sequence(subdomainMiddleware, authMiddleware)
-export const onRequest = subdomainMiddleware  // Auth disabled
+export const onRequest = sequence(subdomainMiddleware, authMiddleware)

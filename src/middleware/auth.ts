@@ -1,29 +1,42 @@
 import type { MiddlewareHandler } from 'astro'
 
-export const authMiddleware: MiddlewareHandler = async ({ request, locals, cookies, url }, next) => {
-  // AUTH DISABLED - Allow all admin access
+// Routes that never need authentication
+const PUBLIC_ADMIN_PATHS = new Set([
+  '/admin/login',
+  '/api/admin/login',
+  '/api/admin/logout',
+])
+
+export const authMiddleware: MiddlewareHandler = async ({ url, locals, cookies }, next) => {
+  const isAdminRoute = url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/admin')
+  if (!isAdminRoute) return next()
+
+  // Always allow login / logout through
+  if (PUBLIC_ADMIN_PATHS.has(url.pathname)) return next()
+
+  // In local dev or ngrok preview — bypass auth for convenience
+  if (import.meta.env.DEV || locals.isNgrok) {
+    locals.isAdmin = true
+    return next()
+  }
+
+  // Production — check session cookie
+  const session = cookies.get('admin_session')
+  if (session?.value !== 'authenticated') {
+    // API routes → 401 JSON so fetch() callers get a proper error
+    if (url.pathname.startsWith('/api/')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    // Page routes → redirect to login
+    return new Response(null, {
+      status: 302,
+      headers: { Location: '/admin/login' },
+    })
+  }
+
   locals.isAdmin = true
   return next()
-
-  // // Protect all /admin/* routes except /admin/login
-  // if (url.pathname.startsWith('/admin') && !url.pathname.startsWith('/admin/login')) {
-  //   // In development mode (including ngrok), bypass authentication for convenience
-  //   const isDev = import.meta.env.DEV || locals.isNgrok
-  //   if (isDev) {
-  //     locals.isAdmin = true
-  //     return next()
-  //   }
-
-  //   const session = cookies.get('admin_session')
-  //   if (!session?.value || session.value !== 'authenticated') {
-  //     return new Response(null, {
-  //       status: 302,
-  //       headers: { Location: '/admin/login' },
-  //     })
-  //   }
-  // }
-
-  // const isDev = import.meta.env.DEV || locals.isNgrok
-  // locals.isAdmin = isDev || cookies.get('admin_session')?.value === 'authenticated'
-  // return next()
 }
