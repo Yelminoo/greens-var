@@ -13,7 +13,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (!password) return json({ error: 'Password is required' }, 400)
 
-  const hash   = import.meta.env.ADMIN_PASSWORD_HASH ?? process.env['ADMIN_PASSWORD_HASH']
+  // Use || not ?? — import.meta.env bakes in "" (empty string) at build time if unset,
+  // and "" ?? fallback returns "" — || correctly falls through to the runtime process.env value.
+  const hash = (import.meta.env.ADMIN_PASSWORD_HASH || process.env['ADMIN_PASSWORD_HASH'] || '').trim()
   const isProd = import.meta.env.PROD
 
   // In production, refuse if no hash is configured
