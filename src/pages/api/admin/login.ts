@@ -15,8 +15,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   // Use || not ?? — import.meta.env bakes in "" (empty string) at build time if unset,
   // and "" ?? fallback returns "" — || correctly falls through to the runtime process.env value.
-  const hash = (import.meta.env.ADMIN_PASSWORD_HASH || process.env['ADMIN_PASSWORD_HASH'] || '').trim()
+  const hash   = (import.meta.env.ADMIN_PASSWORD_HASH || process.env['ADMIN_PASSWORD_HASH'] || '').trim()
   const isProd = import.meta.env.PROD
+
+  // TEMP DEBUG
+  console.log('[login] isProd:', isProd)
+  console.log('[login] hash length:', hash.length)
+  console.log('[login] hash prefix:', hash.substring(0, 10))
+  console.log('[login] password length:', password.length)
 
   // In production, refuse if no hash is configured
   if (isProd && !hash) {
@@ -27,6 +33,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const valid = hash
     ? await bcrypt.compare(password, hash)
     : password === 'admin'   // dev-only fallback
+
+  console.log('[login] valid:', valid)
 
   if (!valid) return json({ error: 'Incorrect password. Please try again.' }, 401)
 
