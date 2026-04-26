@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro'
-import bcrypt from 'bcryptjs'
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   // Accept JSON (sent by fetch) — avoids Astro's CSRF block on form POST
@@ -13,28 +12,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (!password) return json({ error: 'Password is required' }, 400)
 
-  // Use || not ?? — import.meta.env bakes in "" (empty string) at build time if unset,
-  // and "" ?? fallback returns "" — || correctly falls through to the runtime process.env value.
-  const hash   = (import.meta.env.ADMIN_PASSWORD_HASH || process.env['ADMIN_PASSWORD_HASH'] || '').trim()
   const isProd = import.meta.env.PROD
 
-  // TEMP DEBUG
-  console.log('[login] isProd:', isProd)
-  console.log('[login] hash length:', hash.length)
-  console.log('[login] hash prefix:', hash.substring(0, 10))
-  console.log('[login] password length:', password.length)
+  // Plain text password comparison (temporary — replace with bcrypt once .env hash issue is resolved)
+  const adminPassword = (process.env['ADMIN_PASSWORD'] || '').trim()
 
-  // In production, refuse if no hash is configured
-  if (isProd && !hash) {
-    console.error('[auth] ADMIN_PASSWORD_HASH is not set in production!')
-    return json({ error: 'Server misconfiguration: ADMIN_PASSWORD_HASH not set.' }, 500)
+  if (isProd && !adminPassword) {
+    return json({ error: 'Server misconfiguration: ADMIN_PASSWORD not set.' }, 500)
   }
 
-  const valid = hash
-    ? await bcrypt.compare(password, hash)
+  const valid = adminPassword
+    ? password === adminPassword
     : password === 'admin'   // dev-only fallback
-
-  console.log('[login] valid:', valid)
 
   if (!valid) return json({ error: 'Incorrect password. Please try again.' }, 401)
 

@@ -19,6 +19,7 @@ module.exports = {
       SESSION_SECRET:           process.env.SESSION_SECRET           || '',
       DATABASE_URL:             process.env.DATABASE_URL             || '',
       ADMIN_PASSWORD_HASH:      process.env.ADMIN_PASSWORD_HASH      || '',
+      ADMIN_PASSWORD:           process.env.ADMIN_PASSWORD           || '',
       QUOTE_FROM_NAME:          process.env.QUOTE_FROM_NAME          || '',
       QUOTE_FROM_EMAIL:         process.env.QUOTE_FROM_EMAIL         || '',
       QUOTE_TO_EMAIL:           process.env.QUOTE_TO_EMAIL           || '',
