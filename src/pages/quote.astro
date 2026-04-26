@@ -1,7 +1,8 @@
 ---
 import BrandLayout from '../layouts/BrandLayout.astro'
 const brand = Astro.locals.brand as 'fruithai' | 'variegata'
-const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--color-orange-fruit)'
+const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--color-ft-mid)'
+const siteKey = import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY ?? ''
 ---
 
 <BrandLayout title="Request a Quote" brand={brand === 'main' ? 'fruithai' : brand}>
@@ -55,8 +56,14 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
 
       <div id="form-error" class="hidden bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm"></div>
 
-      <button type="submit" id="submit-btn"
-              class="w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all"
+      <!-- reCAPTCHA widget — rendered here, submit unlocks when solved -->
+      <div class="flex flex-col items-start gap-3">
+        <div id="recaptcha-widget"></div>
+        <p id="captcha-hint" class="text-xs opacity-50">Please complete the verification above to enable the submit button.</p>
+      </div>
+
+      <button type="submit" id="submit-btn" disabled
+              class="w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={`background-color: ${accentColor}`}>
         Submit Quote Request
       </button>
@@ -73,10 +80,49 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
   </div>
 </BrandLayout>
 
+<script define:vars={{ siteKey }}>
+  // Make siteKey available to the module script below
+  window.__recaptchaSiteKey = siteKey
+</script>
+
 <script>
   import { getBasket, updateQuantity, updateRequestedKg, removeFromBasket, clearBasket } from '../lib/quoteBasket'
 
   const accentColor = document.body.style.getPropertyValue('--brand') || 'var(--color-orange-fruit)'
+
+  // ── reCAPTCHA setup ──────────────────────────────────────────
+  const submitBtn  = document.getElementById('submit-btn') as HTMLButtonElement
+  const captchaHint = document.getElementById('captcha-hint')!
+
+  // Called by reCAPTCHA when the user successfully ticks the box
+  ;(window as any).onCaptchaSuccess = () => {
+    submitBtn.disabled = false
+    captchaHint.classList.add('hidden')
+  }
+
+  // Called when the token expires (2 min idle)
+  ;(window as any).onCaptchaExpired = () => {
+    submitBtn.disabled = true
+    captchaHint.classList.remove('hidden')
+  }
+
+  // Called once the reCAPTCHA library has loaded
+  ;(window as any).onRecaptchaLoad = () => {
+    const siteKey = (window as any).__recaptchaSiteKey
+    if (!siteKey) return
+    ;(window as any).grecaptcha.render('recaptcha-widget', {
+      sitekey:          siteKey,
+      callback:         'onCaptchaSuccess',
+      'expired-callback': 'onCaptchaExpired',
+    })
+  }
+
+  // Dynamically inject the reCAPTCHA script (avoids modifying BrandLayout)
+  const rcScript = document.createElement('script')
+  rcScript.src   = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit'
+  rcScript.async = true
+  rcScript.defer = true
+  document.head.appendChild(rcScript)
 
   function renderBasket() {
     const basket = getBasket()
@@ -146,6 +192,14 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
       return
     }
 
+    // Get reCAPTCHA token
+    const captchaToken = (window as any).grecaptcha?.getResponse() ?? ''
+    if (!captchaToken) {
+      errorEl.textContent = 'Please complete the CAPTCHA verification.'
+      errorEl.classList.remove('hidden')
+      return
+    }
+
     btn.textContent = 'Submitting...'
     btn.disabled = true
     errorEl.classList.add('hidden')
@@ -156,7 +210,7 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
       const res = await fetch('/api/quotes/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, items: basket }),
+        body: JSON.stringify({ ...data, items: basket, captchaToken }),
       })
       const json = await res.json()
 
@@ -171,7 +225,10 @@ const accentColor = brand === 'variegata' ? 'var(--color-teal-veg)' : 'var(--col
       errorEl.textContent = err.message
       errorEl.classList.remove('hidden')
       btn.textContent = 'Submit Quote Request'
-      btn.disabled = false
+      // Reset CAPTCHA so user must verify again on retry
+      ;(window as any).grecaptcha?.reset()
+      btn.disabled = true
+      captchaHint.classList.remove('hidden')
     }
   })
 </script>

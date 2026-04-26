@@ -12,6 +12,7 @@ const schema = z.object({
   region:       z.string().min(1),
   deliveryDate: z.string().optional(),
   notes:        z.string().optional(),
+  captchaToken: z.string().min(1, 'CAPTCHA verification is required'),
   items: z.array(z.object({
     slug:        z.string(),
     name:        z.string(),
@@ -21,6 +22,29 @@ const schema = z.object({
     requestedKg: z.number().nullable().optional(),
   })).min(1),
 })
+
+async function verifyCaptcha(token: string): Promise<boolean> {
+  const secret = import.meta.env.RECAPTCHA_SECRET_KEY ?? process.env['RECAPTCHA_SECRET_KEY']
+  if (!secret) {
+    console.warn('[reCAPTCHA] No secret key configured — skipping verification')
+    return true   // fail open in dev if key is missing
+  }
+  try {
+    const res  = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    new URLSearchParams({ secret, response: token }),
+    })
+    const json = await res.json() as { success: boolean; 'error-codes'?: string[] }
+    if (!json.success) {
+      console.warn('[reCAPTCHA] Verification failed:', json['error-codes'])
+    }
+    return json.success
+  } catch (err) {
+    console.error('[reCAPTCHA] Network error during verification:', err)
+    return false
+  }
+}
 
 function generateRef(): string {
   const ts  = Date.now().toString(36).toUpperCase()
@@ -32,7 +56,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json()
     const data = schema.parse(body)
-    const ref  = generateRef()
+
+    // Verify CAPTCHA before touching the database
+    const captchaOk = await verifyCaptcha(data.captchaToken)
+    if (!captchaOk) {
+      return new Response(
+        JSON.stringify({ error: 'CAPTCHA verification failed. Please try again.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const ref   = generateRef()
     const brand = locals.brand === 'main' ? data.items[0]?.brand ?? 'fruithai' : locals.brand
 
     const [quote] = await db.insert(quoteRequests).values({
@@ -54,7 +88,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         productSlug: item.slug,
         quantity:    item.quantity,
         unit:        item.unit,
-        weightKg:    item.requestedKg ?? null,  // customer's requested KG — admin can refine later
+        weightKg:    item.requestedKg ?? null,
       }))
     )
 
